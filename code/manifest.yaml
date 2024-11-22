@@ -8,7 +8,7 @@ service_account:
 
 inputs:
   organization:
-    - name: webhookUrl
+    - name: webhook_url
       description: Slack channel webhook URL.
       field_type: text
       is_required: true
