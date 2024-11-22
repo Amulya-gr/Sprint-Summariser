@@ -8,7 +8,23 @@ interface SprintDetails {
   endDate: string;
 }
 
-const sprintStore: Map<string, SprintDetails> = new Map();
+let sprintStore: Map<string, SprintDetails> = new Map();
+
+// Cleanup function to remove old sprints periodically
+function cleanupOldSprints() {
+  const now = Date.now();
+  sprintStore.forEach((sprint, sprintId) => {
+    const sprintEndDate = new Date(sprint.endDate).getTime();
+    // Remove sprint if it has ended more than 1 day ago
+    if (sprintEndDate < now - 86400000) { // 86400000 ms = 1 day
+      sprintStore.delete(sprintId);
+      console.log(`Deleted sprint details for sprint ID: ${sprintId}`);
+    }
+  });
+}
+
+// Periodically clean up old sprints every 24 hours
+setInterval(cleanupOldSprints, 86400000); // 1 day in ms
 
 async function handleWorkEvent(event: any) {
   const devrevPAT = event.context.secrets.service_account_token;
