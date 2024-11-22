@@ -4,7 +4,7 @@
 
 import { client } from "@devrev/typescript-sdk";
 import { WorkType } from "@devrev/typescript-sdk/dist/auto-generated/public-devrev-sdk";
-import { postSprintSummaryToSlack } from "slackPoster";
+import { postSprintSummaryToSlack } from "../../slackPoster";
 
 import axios from 'axios';
 
