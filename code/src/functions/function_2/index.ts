@@ -8,7 +8,7 @@ import { postSprintSummaryToSlack } from "slackPoster";
 
 import axios from 'axios';
 
-const openAiApiKey = 'your-openai-api-key';  // Replace with your OpenAI API key
+const openAiApiKey = 'your-openai-api-key';
 
 const generateSprintOverview = async (data: any) => {
   // Format the data for the prompt
@@ -52,26 +52,35 @@ const generateSprintOverview = async (data: any) => {
   `;
 
   try {
-    const response = await axios.post(
-      'https://api.openai.com/v1/completions',
-      {
-        model: 'gpt-4', // or use another model if preferred
-        prompt: prompt,
-        max_tokens: 500,
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${openAiApiKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // const response = await axios.post(
+    //   'https://api.openai.com/v1/completions',
+    //   {
+    //     model: 'gpt-4', // or use another model if preferred
+    //     prompt: prompt,
+    //     max_tokens: 500,
+    //     temperature: 0.7,
+    //   },
+    //   {
+    //     headers: {
+    //       'Authorization': `Bearer ${openAiApiKey}`,
+    //       'Content-Type': 'application/json',
+    //     },
+    //   }
+    // );
     
-    return response.data.choices[0].text.trim();
+    // return response.data.choices[0].text.trim();
+
+    return ({
+      "completedTasks": 15,
+      "inProgressTasks": 5,
+      "blockedTasks": 2,
+      "whatWentWell": "• Delivered 15 features on time.\n• Effective team collaboration and communication.",
+      "whatWentWrong": "• Encountered delays due to resource constraints.\n• Blocked by dependency issues on certain tasks.",
+      "retrospectiveInsights": "• Plan sprints with a buffer to account for delays.\n• Allocate resources more effectively for critical tasks."
+    })
   } catch (error) {
     console.error('Error generating sprint overview:', error);
-    return 'Error generating overview.';
+    return null;
   }
 };
 
@@ -93,8 +102,12 @@ async function handleSprintEndEvent(event: any) {
   console.log(response.data);
 
   const sprintSummary = await generateSprintOverview(response.data);
-  const webhookUrl = event.input_data.global_values['webhookUrl'];
-  await postSprintSummaryToSlack(webhookUrl, sprintSummary);
+  if (sprintSummary) {
+    const webhookUrl = event.input_data.global_values['webhookUrl'];
+    await postSprintSummaryToSlack(webhookUrl, sprintSummary);
+  } else {
+    console.error('Failed to generate sprint summary');
+  }
 }
 
 export const run = async (events: any[]) => {
