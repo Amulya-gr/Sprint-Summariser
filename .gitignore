@@ -33,15 +33,3 @@ Thumbs.db
 
 # Build artifacts
 *.tar.gz
-
-# Configuration files
-code/.npmrc
-code/babel.config.js
-code/jest.config.js
-code/manifest.yaml
-code/nodemon.json
-code/package-lock.json
-
-# TypeScript
-code/tsconfig.eslint.json
-code/tsconfig.json
