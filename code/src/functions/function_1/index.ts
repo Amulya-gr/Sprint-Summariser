@@ -1,5 +1,4 @@
 import axios from "axios";
-import { postSprintSummaryToSlack } from "../../slackPoster";
 
 interface SprintDetails {
   id: string;
@@ -89,60 +88,6 @@ async function scheduleSprintEndEvent(
   } catch (error) {
     console.error("Error scheduling sprint end event:", error);
   }
-}
-
-// Fetch sprint-related work items using works.list API
-async function gatherSprintData(
-  sprintId: string,
-  devrevPAT: string
-): Promise<any> {
-  const url = `https://api.devrev.ai/works.list?issue.sprint=${encodeURIComponent(
-    sprintId
-  )}&type=issue`;
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: devrevPAT,
-      },
-    });
-    const workItems = response.data.items;
-    const completedTasks = workItems.filter(
-      (item: any) => item.status === "completed"
-    ).length;
-    const inProgressTasks = workItems.filter(
-      (item: any) => item.status === "in-progress"
-    ).length;
-    const blockedTasks = workItems.filter(
-      (item: any) => item.status === "blocked"
-    ).length;
-
-    return {
-      completedTasks,
-      inProgressTasks,
-      blockedTasks,
-      whatWentWell:
-        "• Delivered features on time.\n• Effective team collaboration.",
-      whatWentWrong:
-        "• Delayed due to resource constraints.\n• Encountered major blockers.",
-      retrospectiveInsights:
-        "• Plan sprints with buffers.\n• Allocate resources effectively.",
-    };
-  } catch (error) {
-    console.error("Error fetching sprint data:", error);
-    throw new Error("Failed to gather sprint data");
-  }
-}
-
-async function runScheduledEvent(event: any) {
-  const sprintId = event.payload.object_id;
-  const devrevPAT = event.context.secrets.service_account_token;
-
-  const sprintData = await gatherSprintData(sprintId, devrevPAT);
-
-  const webhookUrl =
-    "https://hooks.slack.com/services/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";
-  postSprintSummaryToSlack(webhookUrl, sprintData);
-  console.log("Sprint summary sent to Slack.");
 }
 
 export const run = async (events: any[]) => {
