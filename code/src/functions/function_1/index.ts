@@ -45,7 +45,7 @@ async function handleWorkEvent(event: any) {
 
       sprintStore.set(sprint.id, sprintDetails);
       // Scheduling the sprint end event
-      await scheduleSprintEndEvent(sprintDetails, devrevPAT);
+      await scheduleSprintEndEvent(sprintDetails, devrevPAT, event.input_data);
     }
   }
 }
@@ -53,7 +53,8 @@ async function handleWorkEvent(event: any) {
 // Schedule an event using DevRev API
 async function scheduleSprintEndEvent(
   sprint: SprintDetails,
-  devrevPAT: string
+  devrevPAT: string,
+  inputData: any
 ): Promise<void> {
   const url = "https://api.devrev.ai/event-sources.schedule";
   const delaySecs = Math.floor(
@@ -70,7 +71,7 @@ async function scheduleSprintEndEvent(
   const publishAt = new Date(Date.now() + 1000 * delaySecs).toISOString();
 
   const req = {
-    id: "scheduled-events",
+    id: inputData.event_sources["scheduled-events"],
     payload: payloadBytes,
     event_type: "work-created-scheduled-event",
     publish_at: publishAt,
