@@ -103,7 +103,7 @@ async function handleSprintEndEvent(event: any) {
 
   const sprintSummary = await generateSprintOverview(response.data);
   if (sprintSummary) {
-    const webhookUrl = event.input_data.global_values['webhookUrl'];
+    const webhookUrl = event.input_data.global_values['webhook_url'];
     await postSprintSummaryToSlack(webhookUrl, sprintSummary);
   } else {
     console.error('Failed to generate sprint summary');
