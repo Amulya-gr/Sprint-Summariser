@@ -1,0 +1,62 @@
+version: "2"
+
+name: Sprint Summarizer Snap-in
+description: Snap-In to generate sprint overview automatically upon sprint completion.
+
+service_account:
+  display_name: "DevRev Bot"
+
+inputs:
+  organization:
+    - name: webhookUrl
+      description: Slack channel webhook URL.
+      field_type: text
+      is_required: true
+      default_value: "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX"
+      ui:
+        display_name: Slack Channel Webhook URL
+
+event_sources:
+  organization:
+    - name: devrev-webhook
+      display_name: DevRev
+      type: devrev-webhook
+      config:
+        event_types:
+          - work_created
+          - work_updated
+      filter:
+        jq_query: |
+          if .type == "work_created" then
+            if (.work_created.work.type == "issue") then true
+            else false
+            end
+          elif .type == "work_updated" then
+            if (.work_updated.work.type == "issue") then true
+            else false
+            end
+          else false
+          end
+    - name: scheduled-events
+      description: Events scheduled by snap-ins
+      display_name: Scheduled Events
+      type: flow-events
+
+functions:
+  - name: function_1
+    description: Function to schedule sprint end events and manage sprint data.
+  - name: function_2
+    description: Function to generate sprint summary and post it to the Slack channel.
+
+automations:
+  - name: Schedule Sprint End Event with Sprint Data
+    source: devrev-webhook
+    event_types:
+      - work_created
+      - work_updated
+    function: function_1
+  - name: Generate Sprint Summary on Sprint End
+    source: scheduled-events
+    event_types:
+      - custom:work-created-scheduled-event
+    function: function_2
