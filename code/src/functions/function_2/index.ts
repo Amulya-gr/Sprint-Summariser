@@ -126,6 +126,7 @@ const generateSprintOverview = async (
   const prompt = constructPrompt(issues, sprintVelocity);
 
   try {
+    console.info("Sending request to OpenAI for sprint overview generation...");
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -146,6 +147,7 @@ const generateSprintOverview = async (
       response.choices[0].message?.content
     ) {
       const content = response.choices[0].message.content.trim();
+      console.info("Sprint overview generated successfully.");
       return JSON.parse(content); // Safely parse the content into SprintData
     } else {
       console.error("No valid response or message content from OpenAI API");
@@ -172,13 +174,14 @@ async function handleSprintEndEvent(event: any): Promise<void> {
   };
 
   try {
-    // Call the API with parameters to get the issues in the sprint
+    console.info("Fetching sprint issues from DevRev...");
     const response = await devrevSDK.worksList(queryParams);
-    console.log("Fetched issues:", response.data);
+    console.info("Fetched issues:", response.data);
 
     const sprintSummary = await generateSprintOverview(response.data);
 
     if (sprintSummary) {
+      console.info("Posting sprint summary to Slack...");
       const webhookUrl = event.input_data.global_values["webhook_url"];
       await postSprintSummaryToSlack(webhookUrl, sprintSummary); // Post summary to Slack
     } else {
@@ -218,6 +221,7 @@ function calculateSprintVelocity(issues: any[]): number {
     }
   });
 
+  console.info(`Calculated sprint velocity: ${totalEffort}`);
   return totalEffort;
 }
 
