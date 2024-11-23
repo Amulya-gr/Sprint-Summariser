@@ -1,12 +1,29 @@
 import axios from 'axios';
 
 interface SprintData {
-    completedTasks: number;
-    inProgressTasks: number;
-    blockedTasks: number;
+    sprintName: string;
+    startDate: string;
+    endDate: string;
+    completedIssues: number;
+    inProgressIssues: number;
+    blockedIssues: number;
     whatWentWell: string;
     whatWentWrong: string;
     retrospectiveInsights: string;
+    issuesSummary: IssueSummary[];
+}
+
+interface IssueSummary {
+    status: string;  // e.g., "Completed", "In Progress", "Blocked"
+    issueCount: number;
+    issues: Issue[];  // Array of issues with their details
+}
+
+interface Issue {
+    issueKey: string;  // Unique identifier for the issue
+    name: string;      // Name of the issue (e.g., "Fix UI Bug", "API Optimization")
+    priority: string;  // e.g., "High", "Medium", "Low"
+    part: string;      // Part of the project the issue is related to, e.g., "Frontend", "Backend"
 }
 
 /**
@@ -16,6 +33,23 @@ interface SprintData {
  * @param sprintData - The sprint data to include in the summary.
  */
 export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: SprintData): Promise<void> {
+    // Create issue status sections based on provided summaries
+    const issueStatusSections = sprintData.issuesSummary.map((issueStatus) => {
+        return {
+            type: "section",
+            fields: [
+                {
+                    type: "mrkdwn",
+                    text: `*${issueStatus.status} Issues:*`
+                },
+                {
+                    type: "mrkdwn",
+                    text: `*Total:* ${issueStatus.issueCount}\n*Issues:*\n${issueStatus.issues.map(issue => `• ${issue.issueKey} - ${issue.name} (Priority: ${issue.priority}, Part: ${issue.part})`).join("\n")}`
+                }
+            ]
+        };
+    });
+
     const payload = {
         text: "🏁 *Sprint Summary* 🏁",
         blocks: [
@@ -26,20 +60,41 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     text: "🚀 Sprint Overview"
                 }
             },
+            // Sprint Meta-data Section (without Sprint Goal)
             {
                 type: "section",
                 fields: [
                     {
                         type: "mrkdwn",
-                        text: `*Completed Tasks:*\n${sprintData.completedTasks}`
+                        text: `*Sprint Name:*\n${sprintData.sprintName}`
                     },
                     {
                         type: "mrkdwn",
-                        text: `*In-Progress Tasks:*\n${sprintData.inProgressTasks}`
+                        text: `*Start Date:*\n${sprintData.startDate}`
                     },
                     {
                         type: "mrkdwn",
-                        text: `*Blocked Tasks:*\n${sprintData.blockedTasks}`
+                        text: `*End Date:*\n${sprintData.endDate}`
+                    }
+                ]
+            },
+            {
+                type: "divider"
+            },
+            {
+                type: "section",
+                fields: [
+                    {
+                        type: "mrkdwn",
+                        text: `*Completed Issues:*\n${sprintData.completedIssues}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*In-Progress Issues:*\n${sprintData.inProgressIssues}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Blocked Issues:*\n${sprintData.blockedIssues}`
                     }
                 ]
             },
@@ -87,7 +142,11 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     type: "mrkdwn",
                     text: sprintData.retrospectiveInsights
                 }
-            }
+            },
+            {
+                type: "divider"
+            },
+            ...issueStatusSections // Add issue status groupings
         ]
     };
 
