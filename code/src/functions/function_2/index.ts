@@ -1,13 +1,12 @@
 import { client } from "@devrev/typescript-sdk";
 import { WorkType } from "@devrev/typescript-sdk/dist/auto-generated/public-devrev-sdk";
-import dotenv from "dotenv";
 import { OpenAI } from "openai";
 import { postSprintSummaryToSlack } from "../../slackPoster";
 
-dotenv.config();
+import config from '../../config.json';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "", // Handle missing environment variables gracefully
+  apiKey: config.OPENAI_API_KEY
 });
 
 // Priority-to-effort mapping
@@ -86,7 +85,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
 
     ${JSON.stringify(issues, null, 2)}
 
-    Provide a structured output strictly in the following format:
+    Provide a structured output strictly in the following JSON string format:
 
     {
       sprintName: string, 
@@ -114,6 +113,8 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
         }
       ]
     }
+    
+    The output should only contain JSON string
   `;
 };
 
@@ -147,8 +148,9 @@ const generateSprintOverview = async (
       response.choices[0].message?.content
     ) {
       const content = response.choices[0].message.content.trim();
-      console.info("Sprint overview generated successfully.");
-      return JSON.parse(content); // Safely parse the content into SprintData
+      console.info("Sprint overview generated successfully.", content);
+      const sanitizedContent = content.replace(/```json/g, '').replace(/```/g, '');
+      return JSON.parse(sanitizedContent); // Safely parse the content into SprintData
     } else {
       console.error("No valid response or message content from OpenAI API");
       return null;
