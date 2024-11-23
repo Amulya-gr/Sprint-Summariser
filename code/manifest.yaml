@@ -25,14 +25,17 @@ event_sources:
         event_types:
           - work_created
           - work_updated
+      # Filter ensures work type is 'issue' and sprint is active
       filter:
         jq_query: |
           if .type == "work_created" then
-            if (.work_created.work.type == "issue") then true
+            if (.work_created.work.type == "issue" and 
+                (.work_created.work.sprint? != null and .work_created.work.sprint.state? == "active")) then true
             else false
             end
           elif .type == "work_updated" then
-            if (.work_updated.work.type == "issue") then true
+            if (.work_updated.work.type == "issue" and 
+                (.work_updated.work.sprint? != null and .work_updated.work.sprint.state? == "active")) then true
             else false
             end
           else false
