@@ -1,90 +1,151 @@
-/*
- * Copyright (c) 2023 DevRev, Inc. All rights reserved.
- */
-
 import { client } from "@devrev/typescript-sdk";
 import { WorkType } from "@devrev/typescript-sdk/dist/auto-generated/public-devrev-sdk";
+import dotenv from "dotenv";
+import { OpenAI } from "openai";
 import { postSprintSummaryToSlack } from "../../slackPoster";
 
-import axios from 'axios';
+dotenv.config();
 
-const openAiApiKey = 'your-openai-api-key';
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "", // Handle missing environment variables gracefully
+});
 
-const generateSprintOverview = async (data: any) => {
-  // Format the data for the prompt
-  const issues = data.works.map((issue: any) => {
-    return {
-      title: issue.title,
-      stage: issue.stage.name,
-      state: issue.stage.state.name,
-      applies_to_part: issue.applies_to_part,
-      priority: issue.priority,
-      owner: issue.owned_by.map((owner: any) => owner.display_name).join(', '),
-      createdDate: issue.created_date,
-      modifiedDate: issue.modified_date,
-      sprintEndDate: issue.sprint.end_date,
-      description: issue.body || 'No description provided',
-    };
-  });
+interface SprintData {
+  sprintName: string;
+  startDate: string;
+  endDate: string;
+  completedIssues: number;
+  inProgressIssues: number;
+  blockedIssues: number;
+  whatWentWell: string;
+  whatWentWrong: string;
+  retrospectiveInsights: string;
+  issuesSummary: IssueSummary[];
+}
 
-  // Prepare the OpenAI prompt
-  const prompt = `
-  Please analyze the following sprint tasks and generate a summary including:
-  - What went well: Tasks or aspects of the sprint that were successful.
-  - What went wrong: Issues or blockers faced during the sprint.
-  - Retrospective insights: Recommendations or actionable insights for future sprints.
+interface IssueSummary {
+  status: string; // e.g., "Completed", "In Progress", "Blocked"
+  issueCount: number;
+  issues: Issue[]; // Array of issues with their details
+}
 
-  For each task, determine if it is completed, in progress, or blocked based on its state.
-  
-  Here are the sprint tasks:
+interface Issue {
+  issueKey: string; // Unique identifier for the issue
+  name: string; // Name of the issue (e.g., "Fix UI Bug", "API Optimization")
+  priority: string; // e.g., "High", "Medium", "Low"
+  part: string; // Part of the project the issue is related to, e.g., "Frontend", "Backend"
+}
 
-  ${JSON.stringify(issues)}
+// Helper function to format issues for OpenAI prompt
+const formatIssuesForPrompt = (issues: any[]) => {
+  return issues.map((issue: any) => ({
+    title: issue.title,
+    issueDisplayId: issue.display_id,
+    stage: issue.stage.name,
+    state: issue.stage.state,
+    applies_to_part: issue.applies_to_part,
+    priority: issue.priority,
+    owner: issue.owned_by.map((owner: any) => owner.display_name).join(", "),
+    createdDate: issue.created_date,
+    modifiedDate: issue.modified_date,
+    sprintStartDate: issue.sprint.start_date,
+    sprintEndDate: issue.sprint.end_date,
+    sprintName: issue.sprint.name,
+    description: issue.body || "No description provided",
+  }));
+};
 
-  Provide a structured output in the following format:
-  {
-    completedTasks: number,
-    inProgressTasks: number,
-    blockedTasks: number,
-    whatWentWell: string,
-    whatWentWrong: string,
-    retrospectiveInsights: string
-  }
+// Helper function to construct OpenAI prompt
+const constructPrompt = (issues: any[]) => {
+  return `
+    You are tasked with analyzing and summarizing the DevRev sprint data to support effective sprint retrospectives. The goal is to provide a concise yet comprehensive overview that highlights successes, challenges, and actionable future insights, which will be shared with the team via Slack.
+
+    A DevRev sprint issue is equivalent to a sprint story.
+
+    Your summary must include:
+    
+    - **What went well**: Identify tasks or aspects of the sprint that were successful. Use the data from all sprint issues to determine which tasks were completed successfully, any that were particularly well-executed, or any that had a significant positive impact. Consider the priority of the issues, their state, and whether they were completed on time.
+    - **What went wrong**: Highlight issues or blockers faced during the sprint. Use the data to identify any issues that were blocked, delayed, or faced significant challenges. Consider the state of the issue, its stage, and whether it was completed or remained in progress beyond expectations.
+    - **Retrospective insights**: Provide recommendations or actionable insights for future sprints based on the issues' statuses, priorities, owners, and other details. Reflect on patterns or trends, such as which types of issues were more prone to delays or blockages, and suggest improvements for future sprint planning and execution.
+    - **Issue Summary**: Offer a breakdown of issues by status (Completed, In Progress, Blocked).
+
+    For each issue, determine if it is completed, in progress, or blocked based on its state and stage.
+
+    Here are the sprint issues:
+
+    ${JSON.stringify(issues, null, 2)}
+
+    Provide a structured output strictly in the following format:
+
+    {
+      sprintName: string, 
+      startDate: string, 
+      endDate: string, 
+      completedIssues: number, 
+      inProgressIssues: number, 
+      blockedIssues: number, 
+      whatWentWell: string, 
+      whatWentWrong: string, 
+      retrospectiveInsights: string, 
+      issuesSummary: [
+        {
+          status: "Completed" | "In Progress" | "Blocked", 
+          issueCount: number, 
+          issues: [
+            {
+              issueKey: string, 
+              name: string, 
+              priority: "P0" | "P1" | "P2" | "P3", 
+              part: string
+            }
+          ]
+        }
+      ]
+    }
   `;
+};
+
+// Function to make OpenAI API call to generate sprint overview
+const generateSprintOverview = async (
+  data: any
+): Promise<SprintData | null> => {
+  const issues = formatIssuesForPrompt(data.works);
+  const prompt = constructPrompt(issues);
 
   try {
-    // const response = await axios.post(
-    //   'https://api.openai.com/v1/completions',
-    //   {
-    //     model: 'gpt-4', // or use another model if preferred
-    //     prompt: prompt,
-    //     max_tokens: 500,
-    //     temperature: 0.7,
-    //   },
-    //   {
-    //     headers: {
-    //       'Authorization': `Bearer ${openAiApiKey}`,
-    //       'Content-Type': 'application/json',
-    //     },
-    //   }
-    // );
-    
-    // return response.data.choices[0].text.trim();
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an assistant that helps generate sprint retrospectives.",
+        },
+        { role: "user", content: prompt },
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    });
 
-    return ({
-      "completedTasks": 15,
-      "inProgressTasks": 5,
-      "blockedTasks": 2,
-      "whatWentWell": "• Delivered 15 features on time.\n• Effective team collaboration and communication.",
-      "whatWentWrong": "• Encountered delays due to resource constraints.\n• Blocked by dependency issues on certain tasks.",
-      "retrospectiveInsights": "• Plan sprints with a buffer to account for delays.\n• Allocate resources more effectively for critical tasks."
-    })
+    if (
+      response.choices &&
+      response.choices.length > 0 &&
+      response.choices[0].message?.content
+    ) {
+      const content = response.choices[0].message.content.trim();
+      return JSON.parse(content); // Safely parse the content into SprintData
+    } else {
+      console.error("No valid response or message content from OpenAI API");
+      return null;
+    }
   } catch (error) {
-    console.error('Error generating sprint overview:', error);
+    console.error("Error generating sprint overview:", error);
     return null;
   }
 };
 
-async function handleSprintEndEvent(event: any) {
+// Function to handle the sprint end event and post the summary
+async function handleSprintEndEvent(event: any): Promise<void> {
   const devrevPAT = event.context.secrets.service_account_token;
   const API_BASE = event.execution_metadata.devrev_endpoint;
   const devrevSDK = client.setup({
@@ -93,26 +154,33 @@ async function handleSprintEndEvent(event: any) {
   });
 
   const queryParams = {
-    type: [WorkType.Issue], // Filters work items of type 'Issue'
+    type: [WorkType.Issue],
     "issue.sprint": event.payload.object_id, // Filter by a specific sprint
   };
 
-  // Call the API with parameters
-  const response = await devrevSDK.worksList(queryParams);
-  console.log(response.data);
+  try {
+    // Call the API with parameters to get the issues in the sprint
+    const response = await devrevSDK.worksList(queryParams);
+    console.log("Fetched issues:", response.data);
 
-  const sprintSummary = await generateSprintOverview(response.data);
-  if (sprintSummary) {
-    const webhookUrl = event.input_data.global_values['webhook_url'];
-    await postSprintSummaryToSlack(webhookUrl, sprintSummary);
-  } else {
-    console.error('Failed to generate sprint summary');
+    const sprintSummary = await generateSprintOverview(response.data);
+
+    if (sprintSummary) {
+      const webhookUrl = event.input_data.global_values["webhook_url"];
+      await postSprintSummaryToSlack(webhookUrl, sprintSummary); // Post summary to Slack
+    } else {
+      console.error("Failed to generate sprint summary");
+    }
+  } catch (error) {
+    console.error("Error handling sprint end event:", error);
   }
 }
 
-export const run = async (events: any[]) => {
-  console.info("events", JSON.stringify(events), "\n\n\n");
-  for (let event of events) {
+// Main entry point
+export const run = async (events: any[]): Promise<void> => {
+  console.info("Processing events:", JSON.stringify(events));
+
+  for (const event of events) {
     await handleSprintEndEvent(event);
   }
 };
