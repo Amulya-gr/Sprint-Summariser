@@ -34,8 +34,8 @@ event_sources:
             else false
             end
           elif .type == "work_updated" then
-            if (.work_updated.work.type == "issue" and 
-                (.work_updated.work.sprint? != null and .work_updated.work.sprint.state? == "active")) then true
+            if (.work_updated.old_work.type == "issue" and 
+                (.work_updated.old_work.sprint? != null and .work_updated.old_work.sprint.state? == "active")) then true
             else false
             end
           else false
