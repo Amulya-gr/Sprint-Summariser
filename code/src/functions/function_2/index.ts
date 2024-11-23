@@ -10,10 +10,19 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "", // Handle missing environment variables gracefully
 });
 
+// Priority-to-effort mapping
+const priorityToEffort: Record<string, number> = {
+  P1: 8, // Critical tasks
+  P2: 5, // High priority
+  P3: 3, // Medium priority
+  P4: 1  // Low priority
+};
+
 interface SprintData {
   sprintName: string;
   startDate: string;
   endDate: string;
+  sprintVelocity: number,
   completedIssues: number;
   inProgressIssues: number;
   blockedIssues: number;
@@ -46,8 +55,8 @@ const formatIssuesForPrompt = (issues: any[]) => {
     applies_to_part: issue.applies_to_part,
     priority: issue.priority,
     owner: issue.owned_by.map((owner: any) => owner.display_name).join(", "),
-    createdDate: issue.created_date,
-    modifiedDate: issue.modified_date,
+    actualStartDate: issue.actual_start_date,
+    actualCloseDate: issue.actual_close_date,
     sprintStartDate: issue.sprint.start_date,
     sprintEndDate: issue.sprint.end_date,
     sprintName: issue.sprint.name,
@@ -56,7 +65,7 @@ const formatIssuesForPrompt = (issues: any[]) => {
 };
 
 // Helper function to construct OpenAI prompt
-const constructPrompt = (issues: any[]) => {
+const constructPrompt = (issues: any[], sprintVelocity: number) => {
   return `
     You are tasked with analyzing and summarizing the DevRev sprint data to support effective sprint retrospectives. The goal is to provide a concise yet comprehensive overview that highlights successes, challenges, and actionable future insights, which will be shared with the team via Slack.
 
@@ -71,6 +80,8 @@ const constructPrompt = (issues: any[]) => {
 
     For each issue, determine if it is completed, in progress, or blocked based on its state and stage.
 
+    Sprint Velocity: ${sprintVelocity}
+
     Here are the sprint issues:
 
     ${JSON.stringify(issues, null, 2)}
@@ -81,6 +92,7 @@ const constructPrompt = (issues: any[]) => {
       sprintName: string, 
       startDate: string, 
       endDate: string, 
+      sprintVelocity: number,
       completedIssues: number, 
       inProgressIssues: number, 
       blockedIssues: number, 
@@ -110,7 +122,8 @@ const generateSprintOverview = async (
   data: any
 ): Promise<SprintData | null> => {
   const issues = formatIssuesForPrompt(data.works);
-  const prompt = constructPrompt(issues);
+  const sprintVelocity = calculateSprintVelocity(issues);
+  const prompt = constructPrompt(issues, sprintVelocity);
 
   try {
     const response = await openai.chat.completions.create({
@@ -174,6 +187,38 @@ async function handleSprintEndEvent(event: any): Promise<void> {
   } catch (error) {
     console.error("Error handling sprint end event:", error);
   }
+}
+
+function calculateSprintVelocity(issues: any[]): number {
+  let totalEffort = 0;
+
+  // Extract sprint start and end dates from the first issue (assuming consistent sprint metadata)
+  const sprintStartDate = issues[0]?.sprintStartDate;
+  const sprintEndDate = issues[0]?.sprintEndDate;
+
+  // Ensure sprint dates are valid
+  if (!sprintStartDate || !sprintEndDate) {
+    console.error("Sprint start or end date is missing from issue data.");
+    return 0;
+  }
+
+  const sprintStart = new Date(sprintStartDate).getTime();
+  const sprintEnd = new Date(sprintEndDate).getTime();
+
+  // Iterate through issues and calculate total effort for closed tasks within the sprint
+  issues.forEach((issue) => {
+    if (issue.stage.toLowerCase() === "completed" && issue.actualCloseDate) {
+      const actualCloseDate = new Date(issue.actualCloseDate).getTime();
+
+      // Consider issues closed within the sprint's timeframe
+      if (actualCloseDate >= sprintStart && actualCloseDate <= sprintEnd) {
+        const effort = priorityToEffort[issue.priority] || 0; // Default effort is 0 if priority is not mapped
+        totalEffort += effort;
+      }
+    }
+  });
+
+  return totalEffort;
 }
 
 // Main entry point

@@ -4,6 +4,7 @@ interface SprintData {
     sprintName: string;
     startDate: string;
     endDate: string;
+    sprintVelocity: number,
     completedIssues: number;
     inProgressIssues: number;
     blockedIssues: number;
@@ -60,7 +61,7 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     text: "🚀 Sprint Overview"
                 }
             },
-            // Sprint Meta-data Section (without Sprint Goal)
+            // Sprint Meta-data Section (including Sprint Velocity)
             {
                 type: "section",
                 fields: [
@@ -75,6 +76,10 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     {
                         type: "mrkdwn",
                         text: `*End Date:*\n${sprintData.endDate}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Sprint Velocity:*\n${sprintData.sprintVelocity} (Sum of efforts for completed issues)`
                     }
                 ]
             },
@@ -146,7 +151,14 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             {
                 type: "divider"
             },
-            ...issueStatusSections // Add issue status groupings
+            ...issueStatusSections, // Add issue status groupings
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: `_P.S. The sprint velocity is calculated as the sum of efforts for completed issues during the sprint. Effort values are assigned based on priority:_\n\n• *P1 (Critical):* 8 effort points\n• *P2 (High Priority):* 5 effort points\n• *P3 (Medium Priority):* 3 effort points\n• *P4 (Low Priority):* 1 effort point`
+                }
+            }
         ]
     };
 
