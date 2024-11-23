@@ -29,7 +29,7 @@ async function handleWorkEvent(event: any) {
   const devrevPAT = event.context.secrets.service_account_token;
   const work = event.payload.work_created
     ? event.payload.work_created.work
-    : event.payload.work_.work;
+    : event.payload.work_updated.old_work;
 
   // Storing sprint details
   const sprint = work.sprint;
