@@ -1,7 +1,8 @@
 import { client } from "@devrev/typescript-sdk";
 import { WorkType } from "@devrev/typescript-sdk/dist/auto-generated/public-devrev-sdk";
 import { OpenAI } from "openai";
-import { postSprintSummaryToSlack } from "../../slackPoster";
+import { postSprintSummaryToSlack } from "../../sprintEndSlackPoster";
+import { postMidSprintAlertToSlack } from "../../midSprintSlackPoster";
 
 import config from '../../config.json';
 
@@ -11,10 +12,15 @@ const openai = new OpenAI({
 
 // Priority-to-effort mapping
 const priorityToEffort: Record<string, number> = {
-  P1: 8, // Critical tasks
-  P2: 5, // High priority
-  P3: 3, // Medium priority
-  P4: 1  // Low priority
+  P0: 8, // Critical tasks
+  P1: 5, // High priority
+  P2: 3, // Medium priority
+  P3: 1  // Low priority
+};
+
+const SPRINT_EVENTS = {
+  END: "sprint-end-event",
+  MID: "mid-sprint-alert-event",
 };
 
 interface SprintData {
@@ -22,7 +28,7 @@ interface SprintData {
   startDate: string;
   endDate: string;
   sprintVelocity: number,
-  completedIssues: number;
+  closedIssues: number;
   inProgressIssues: number;
   blockedIssues: number;
   whatWentWell: string;
@@ -32,7 +38,7 @@ interface SprintData {
 }
 
 interface IssueSummary {
-  status: string; // e.g., "Completed", "In Progress", "Blocked"
+  status: string; // e.g., "Closed", "In Progress", "Blocked"
   issueCount: number;
   issues: Issue[]; // Array of issues with their details
 }
@@ -75,9 +81,13 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
     - **What went well**: Identify tasks or aspects of the sprint that were successful. Use the data from all sprint issues to determine which tasks were completed successfully, any that were particularly well-executed, or any that had a significant positive impact. Consider the priority of the issues, their state, and whether they were completed on time.
     - **What went wrong**: Highlight issues or blockers faced during the sprint. Use the data to identify any issues that were blocked, delayed, or faced significant challenges. Consider the state of the issue, its stage, and whether it was completed or remained in progress beyond expectations.
     - **Retrospective insights**: Provide recommendations or actionable insights for future sprints based on the issues' statuses, priorities, owners, and other details. Reflect on patterns or trends, such as which types of issues were more prone to delays or blockages, and suggest improvements for future sprint planning and execution.
-    - **Issue Summary**: Offer a breakdown of issues by status (Completed, In Progress, Blocked).
+    - **Issue Summary**: Offer a breakdown of issues by status (Closed, In Progress, Blocked).
 
-    For each issue, determine if it is completed, in progress, or blocked based on its state and stage.
+    For each issue, determine if it is closed, in progress, or blocked based on its stage.
+
+    Closed category includes: completed, won't_fix, duplicate stages
+    In progress category includes: in_development, in_review, in_testing, in_deployment
+    Blocked category includes: triage, backlog, prioritised
 
     Sprint Velocity: ${sprintVelocity}
 
@@ -92,7 +102,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
       startDate: string, 
       endDate: string, 
       sprintVelocity: number,
-      completedIssues: number, 
+      closedIssues: number, 
       inProgressIssues: number, 
       blockedIssues: number, 
       whatWentWell: string, 
@@ -100,7 +110,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
       retrospectiveInsights: string, 
       issuesSummary: [
         {
-          status: "Completed" | "In Progress" | "Blocked", 
+          status: "Closed" | "In Progress" | "Blocked", 
           issueCount: number, 
           issues: [
             {
@@ -138,7 +148,6 @@ const generateSprintOverview = async (
         },
         { role: "user", content: prompt },
       ],
-      max_tokens: 500,
       temperature: 0.7,
     });
 
@@ -160,6 +169,50 @@ const generateSprintOverview = async (
     return null;
   }
 };
+
+async function handleMidSprintAlertEvent(event: any): Promise<void> {
+  console.info("Handling mid-sprint alert event...");
+  const sprintIssues = await fetchSprintIssues(event, ["triage", "backlog", "prioritized"]);
+
+  if (sprintIssues && sprintIssues.length > 0) {
+    console.info("Posting mid-sprint alert to Slack...");
+    const webhookUrl = event.input_data.global_values["webhook_url"];
+    const issueList = sprintIssues.map(
+      (issue) =>
+        `- ${issue.name} (ID: ${issue.id}, Stage: ${issue.stage?.name || "Unknown"}, Priority: ${issue.priority || "None"})`
+    ).join("\n");
+    
+    const message = `🚨 *Mid-Sprint Alert* 🚨\nThe following issues are in Open state:\n\n${issueList}`;
+    await postMidSprintAlertToSlack(webhookUrl, message);
+  } else {
+    console.info("No issues found in specified stages for mid-sprint alert.");
+  }
+}
+
+async function fetchSprintIssues(event: any, stages: string[]): Promise<any[]> {
+  const devrevPAT = event.context.secrets.service_account_token;
+  const API_BASE = event.execution_metadata.devrev_endpoint;
+  const devrevSDK = client.setup({
+    endpoint: API_BASE,
+    token: devrevPAT,
+  });
+
+  const queryParams = {
+    type: [WorkType.Issue],
+    "issue.sprint": event.payload.object_id, // Filter by sprint ID
+    "stage.name": stages, // Filter by stages
+  };
+
+  try {
+    console.info("Fetching sprint issues from DevRev...");
+    const response = await devrevSDK.worksList(queryParams);
+    console.info("Fetched issues:", response.data?.works);
+    return response.data?.works || [];
+  } catch (error) {
+    console.error("Error fetching sprint issues:", error);
+    return [];
+  }
+}
 
 // Function to handle the sprint end event and post the summary
 async function handleSprintEndEvent(event: any): Promise<void> {
@@ -232,7 +285,16 @@ export const run = async (events: any[]): Promise<void> => {
   console.info("Processing events:", JSON.stringify(events));
 
   for (const event of events) {
-    await handleSprintEndEvent(event);
+    switch (event.event_type) {
+      case SPRINT_EVENTS.END:
+        await handleSprintEndEvent(event);
+        break;
+      case SPRINT_EVENTS.MID:
+        await handleMidSprintAlertEvent(event);
+        break;
+      default:
+        console.warn(`Unhandled event type: ${event.event_type}`);
+    }
   }
 };
 
