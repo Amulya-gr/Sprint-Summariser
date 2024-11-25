@@ -13,6 +13,12 @@ interface SprintData {
     whatWentWrong: string;
     retrospectiveInsights: string;
     issuesSummary: IssueSummary[];
+    comparisonWithPreviousSprints: {
+        velocityTrend: string;
+        issueCompletionTrend: string;
+        blockerTrend: string;
+        recommendations: string;
+    };
 }
 
 interface IssueSummary {
@@ -164,7 +170,41 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             {
                 type: "divider"
             },
-            ...issueStatusSections, // Add issue status groupings
+            {
+                type: "header",
+                text: {
+                    type: "plain_text",
+                    text: "📊 Sprint Comparison (vs. Previous Sprints)"
+                }
+            },
+            {
+                type: "section",
+                fields: [
+                    {
+                        type: "mrkdwn",
+                        text: `*Velocity Trend:* ${sprintData.comparisonWithPreviousSprints.velocityTrend}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Issue Completion Trend:* ${sprintData.comparisonWithPreviousSprints.issueCompletionTrend}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Blocker Trend:* ${sprintData.comparisonWithPreviousSprints.blockerTrend}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Recommendations:* ${sprintData.comparisonWithPreviousSprints.recommendations}`
+                    }
+                ]
+            },
+            {
+                type: "divider"
+            },
+            ...issueStatusSections,
+            {
+                type: "divider"
+            },
             {
                 type: "section",
                 text: {
