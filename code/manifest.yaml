@@ -61,5 +61,6 @@ automations:
   - name: Generate Sprint Summary on Sprint End
     source: scheduled-events
     event_types:
-      - custom:work-created-scheduled-event
+      - custom:sprint-end-event
+      - custom:mid-sprint-alert-event
     function: function_2
