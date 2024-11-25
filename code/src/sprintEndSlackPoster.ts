@@ -5,7 +5,7 @@ interface SprintData {
     startDate: string;
     endDate: string;
     sprintVelocity: number,
-    completedIssues: number;
+    closedIssues: number;
     inProgressIssues: number;
     blockedIssues: number;
     whatWentWell: string;
@@ -15,7 +15,7 @@ interface SprintData {
 }
 
 interface IssueSummary {
-    status: string;  // e.g., "Completed", "In Progress", "Blocked"
+    status: string;  // e.g., "Closed", "In Progress", "Blocked"
     issueCount: number;
     issues: Issue[];  // Array of issues with their details
 }
@@ -71,11 +71,19 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     },
                     {
                         type: "mrkdwn",
-                        text: `*Start Date:*\n${sprintData.startDate}`
+                        text: `*Start Date:*\n${new Intl.DateTimeFormat("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        }).format(new Date(sprintData.startDate))}`
                     },
                     {
                         type: "mrkdwn",
-                        text: `*End Date:*\n${sprintData.endDate}`
+                        text: `*End Date:*\n${new Intl.DateTimeFormat("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        }).format(new Date(sprintData.endDate))}`
                     },
                     {
                         type: "mrkdwn",
@@ -91,7 +99,7 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                 fields: [
                     {
                         type: "mrkdwn",
-                        text: `*Completed Issues:*\n${sprintData.completedIssues}`
+                        text: `*Closed Issues:*\n${sprintData.closedIssues}`
                     },
                     {
                         type: "mrkdwn",
@@ -156,7 +164,7 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: `_P.S. The sprint velocity is calculated as the sum of efforts for completed issues during the sprint. Effort values are assigned based on priority:_\n\n• *P1 (Critical):* 8 effort points\n• *P2 (High Priority):* 5 effort points\n• *P3 (Medium Priority):* 3 effort points\n• *P4 (Low Priority):* 1 effort point`
+                    text: `_P.S. The sprint velocity is calculated as the sum of efforts for completed issues during the sprint. Effort values are assigned based on priority:_\n\n• *P0 (Critical):* 8 effort points\n• *P1 (High Priority):* 5 effort points\n• *P2 (Medium Priority):* 3 effort points\n• *P3 (Low Priority):* 1 effort point`
                 }
             }
         ]
