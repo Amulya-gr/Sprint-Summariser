@@ -36,6 +36,12 @@ interface SprintData {
   whatWentWrong: string;
   retrospectiveInsights: string;
   issuesSummary: IssueSummary[];
+  comparisonWithPreviousSprints: {
+    velocityTrend: string;
+    issueCompletionTrend: string;
+    blockerTrend: string;
+    recommendations: string;
+};
 }
 
 interface IssueSummary {
@@ -49,6 +55,29 @@ interface Issue {
   name: string; // Name of the issue (e.g., "Fix UI Bug", "API Optimization")
   priority: string; // e.g., "High", "Medium", "Low"
   part: string; // Part of the project the issue is related to, e.g., "Frontend", "Backend"
+}
+
+const sprintSummaries: Record<string, SprintData> = {};
+const MAX_SUMMARIES = 3;
+
+// Save a sprint summary, ensuring the maximum limit of 3 records
+function saveSprintSummary(sprintId: string, summary: SprintData): void {
+    if (Object.keys(sprintSummaries).length >= MAX_SUMMARIES) {
+        const oldestSprintId = Object.keys(sprintSummaries).sort(
+            (a, b) =>
+                new Date(sprintSummaries[a].endDate).getTime() -
+                new Date(sprintSummaries[b].endDate).getTime()
+        )[0];
+        console.info(`Removing oldest sprint summary: ${oldestSprintId}`);
+        delete sprintSummaries[oldestSprintId];
+    }
+    sprintSummaries[sprintId] = summary;
+    console.info(`Saved summary for sprint: ${sprintId}`);
+}
+
+// Retrieve all stored sprint summaries (max 3)
+function getLastThreeSprintSummaries(): SprintData[] {
+    return Object.values(sprintSummaries);
 }
 
 // Helper function to format issues
@@ -71,7 +100,17 @@ const formatIssues = (issues: any[]) => {
 };
 
 // Helper function to construct OpenAI prompt
-const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number) => {
+const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number, previousSprints: SprintData[]) => {
+  const previousSprintsData = previousSprints.map((sprint) => ({
+    sprintName: sprint.sprintName,
+    sprintEndDate: sprint.endDate,
+    sprintVelocity: sprint.sprintVelocity,
+    plannedVelocity: sprint.plannedVelocity,
+    closedIssues: sprint.closedIssues,
+    inProgressIssues: sprint.inProgressIssues,
+    blockedIssues: sprint.blockedIssues,
+  }));
+
   return `
     You are tasked with analyzing and summarizing the DevRev sprint data to support effective sprint retrospectives. The goal is to provide a concise yet comprehensive overview that highlights successes, challenges, and actionable future insights, which will be shared with the team via Slack.
 
@@ -83,6 +122,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
     - **What went wrong**: Highlight issues or blockers faced during the sprint. Use the data to identify any issues that were blocked, delayed, or faced significant challenges. Consider the state of the issue, its stage, and whether it was completed or remained in progress beyond expectations.
     - **Retrospective insights**: Provide recommendations or actionable insights for future sprints based on the issues' statuses, priorities, owners, and other details. Reflect on patterns or trends, such as which types of issues were more prone to delays or blockages, and suggest improvements for future sprint planning and execution.
     - **Issue Summary**: Offer a breakdown of issues by status (Closed, In Progress, Blocked).
+    - **Comparison with Previous Sprints**: Analyze trends, improvements, or regressions by comparing the current sprint's performance to the last three sprints. Focus on areas such as velocity, issue resolution rates, blockers, and overall sprint outcomes.
 
     For each issue, determine if it is closed, in progress, or blocked based on its stage.
 
@@ -90,11 +130,12 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
     In progress category includes: in_development, in_review, in_testing, in_deployment
     Blocked category includes: triage, backlog, prioritised
 
-    Sprint Velocity: ${sprintVelocity}, Planned Velocity: ${plannedVelocity}
+    Current Sprint Data:
+        Sprint Velocity: ${sprintVelocity}, Planned Velocity: ${plannedVelocity}
+        Sprint Issues: ${JSON.stringify(issues, null, 2)}
 
-    Here are the sprint issues:
-
-    ${JSON.stringify(issues, null, 2)}
+        Last 3 Sprints Data:
+        ${JSON.stringify(previousSprintsData, null, 2)}
 
     Provide a structured output strictly in the following JSON string format:
 
@@ -109,7 +150,13 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
       blockedIssues: number, 
       whatWentWell: string, 
       whatWentWrong: string, 
-      retrospectiveInsights: string, 
+      retrospectiveInsights: string,
+      comparisonWithPreviousSprints: {
+            velocityTrend: string,
+            issueCompletionTrend: string,
+            blockerTrend: string,
+            recommendations: string
+      },
       issuesSummary: [
         {
           status: "Closed" | "In Progress" | "Blocked", 
@@ -131,44 +178,40 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
 };
 
 // Function to make OpenAI API call to generate sprint overview
-const generateSprintOverview = async (
-  data: any
-): Promise<SprintData | null> => {
+const generateSprintOverview = async (data: any, currentSprintId: string): Promise<SprintData | null> => {
   const issues = formatIssues(data);
-  const {actualVelocity, plannedVelocity} = calculateSprintVelocity(issues);
-  const prompt = constructPrompt(issues, actualVelocity, plannedVelocity);
+  const { actualVelocity, plannedVelocity } = calculateSprintVelocity(issues);
+
+  // Retrieve historical data for comparison
+  const previousSprints = getLastThreeSprintSummaries();
+  const prompt = constructPrompt(issues, actualVelocity, plannedVelocity, previousSprints);
 
   try {
-    console.info("Sending request to OpenAI for sprint overview generation...");
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an assistant that helps generate sprint retrospectives.",
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-    });
+      const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+              { role: "system", content: "You are an assistant that helps generate sprint retrospectives." },
+              { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+      });
 
-    if (
-      response.choices &&
-      response.choices.length > 0 &&
-      response.choices[0].message?.content
-    ) {
-      const content = response.choices[0].message.content.trim();
-      console.info("Sprint overview generated successfully.", content);
-      const sanitizedContent = content.replace(/```json/g, '').replace(/```/g, '');
-      return JSON.parse(sanitizedContent); // Safely parse the content into SprintData
-    } else {
-      console.error("No valid response or message content from OpenAI API");
-      return null;
-    }
+      if (response.choices?.[0]?.message?.content) {
+          const content = response.choices[0].message.content.trim();
+          const sanitizedContent = content.replace(/```json/g, "").replace(/```/g, "");
+          const sprintSummary = JSON.parse(sanitizedContent) as SprintData;
+
+          // Save the current sprint summary
+          saveSprintSummary(currentSprintId, sprintSummary);
+
+          return sprintSummary;
+      } else {
+          console.error("No valid response from OpenAI API");
+          return null;
+      }
   } catch (error) {
-    console.error("Error generating sprint overview:", error);
-    return null;
+      console.error("Error generating sprint overview:", error);
+      return null;
   }
 };
 
@@ -249,7 +292,7 @@ async function handleSprintEndEvent(event: any): Promise<void> {
   try {
     const sprintIssues = await fetchSprintIssues(event);
 
-    const sprintSummary = await generateSprintOverview(sprintIssues);
+    const sprintSummary = await generateSprintOverview(sprintIssues, event.payload.object_id);
 
     if (sprintSummary) {
       console.info("Posting sprint summary to Slack...");
