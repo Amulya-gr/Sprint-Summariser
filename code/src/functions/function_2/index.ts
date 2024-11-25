@@ -107,6 +107,7 @@ const formatIssues = (issues: any[]) => {
 
 // Helper function to construct OpenAI prompt
 const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number, previousSprints: SprintData[]) => {
+  // Extract relevant data for the last three sprints
   const previousSprintsData = previousSprints.map((sprint) => ({
     sprintName: sprint.sprintName,
     sprintEndDate: sprint.endDate,
@@ -120,66 +121,69 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
   return `
     You are tasked with analyzing and summarizing the DevRev sprint data to support effective sprint retrospectives. The goal is to provide a concise yet comprehensive overview that highlights successes, challenges, and actionable future insights, which will be shared with the team via Slack.
 
-    A DevRev sprint issue is equivalent to a sprint story.
-
     Your summary must include:
     
-    - **What went well**: Identify tasks or aspects of the sprint that were successful. Use the data from all sprint issues to determine which tasks were completed successfully, any that were particularly well-executed, or any that had a significant positive impact. Consider the priority of the issues, their state, and whether they were completed on time.
-    - **What went wrong**: Highlight issues or blockers faced during the sprint. Use the data to identify any issues that were blocked, delayed, or faced significant challenges. Consider the state of the issue, its stage, and whether it was completed or remained in progress beyond expectations.
-    - **Retrospective insights**: Provide recommendations or actionable insights for future sprints based on the issues' statuses, priorities, owners, and other details. Reflect on patterns or trends, such as which types of issues were more prone to delays or blockages, and suggest improvements for future sprint planning and execution.
-    - **Issue Summary**: Offer a breakdown of issues by status (Closed, In Progress, Blocked).
-    - **Comparison with Previous Sprints**: Analyze trends, improvements, or regressions by comparing the current sprint's performance to the last three sprints. Focus on areas such as velocity, issue resolution rates, blockers, and overall sprint outcomes.
+    - **What went well**: Identify tasks or aspects of the sprint that were successful. Look for completed issues that had a significant positive impact, or any issues that were particularly well-executed. Consider the priority, state, and whether the issues were completed on time.
+    
+    - **What went wrong**: Identify issues or blockers faced during the sprint. Look for issues that were blocked, delayed, or encountered significant challenges. Analyze their state, stages, and whether they were completed or remained in progress beyond expectations.
+    
+    - **Retrospective insights**: Provide actionable insights for future sprints. Reflect on patterns such as types of issues more prone to delays or blockages, and recommend improvements for future planning and execution.
 
-    If an issue hasBlockedTag as true then categorize it as blocked.
-    For rest of the issues, determine if it is closed or in progress based on its stage.
+    - **Issue Summary**: Provide a breakdown of issues by status: "Closed", "In Progress", and "Blocked". Make sure to categorize issues accurately.
+    
+    - **Comparison with Previous Sprints**: Analyze trends or regressions by comparing the current sprint's performance with the last three sprints. Focus on areas like velocity, issue resolution rates, blockers, and overall sprint outcomes.
 
-    Closed category includes: completed, won't_fix, duplicate stages
-    In progress category includes: in_development, in_review, in_testing, in_deployment
+    **Categorization**:
+    - If an issue has the \`hasBlockedTag\` set to \`true\`, categorize it as "Blocked".
+    - Otherwise, determine its status based on the following stages:
+      - **Closed**: Issues in stages such as completed, won't_fix, duplicate.
+      - **In Progress**: Issues in stages such as in_development, in_review, in_testing, in_deployment.
 
     Current Sprint Data:
-        Sprint Velocity: ${sprintVelocity}, Planned Velocity: ${plannedVelocity}
-        Sprint Issues: ${JSON.stringify(issues, null, 2)}
+        - Sprint Velocity: ${sprintVelocity}
+        - Planned Velocity: ${plannedVelocity}
+        - Sprint Issues: ${JSON.stringify(issues, null, 2)}
 
-        Last 3 Sprints Data:
-        ${JSON.stringify(previousSprintsData, null, 2)}
+    Last 3 Sprints Data:
+    ${JSON.stringify(previousSprintsData, null, 2)}
 
-    Provide a structured output strictly in the following JSON string format:
+    Please provide the summary in the following strict JSON format:
 
     {
-      sprintName: string, 
-      startDate: string, 
-      endDate: string, 
-      sprintVelocity: number,
-      plannedVelocity: number,
-      closedIssues: number, 
-      inProgressIssues: number, 
-      blockedIssues: number, 
-      whatWentWell: string, 
-      whatWentWrong: string, 
-      retrospectiveInsights: string,
-      comparisonWithPreviousSprints: {
-            velocityTrend: string,
-            issueCompletionTrend: string,
-            blockerTrend: string,
-            recommendations: string
+      "sprintName": string,
+      "startDate": string,
+      "endDate": string,
+      "sprintVelocity": number,
+      "plannedVelocity": number,
+      "closedIssues": number,
+      "inProgressIssues": number,
+      "blockedIssues": number,
+      "whatWentWell": string,
+      "whatWentWrong": string,
+      "retrospectiveInsights": string,
+      "comparisonWithPreviousSprints": {
+            "velocityTrend": string,
+            "issueCompletionTrend": string,
+            "blockerTrend": string,
+            "recommendations": string
       },
-      issuesSummary: [
+      "issuesSummary": [
         {
-          status: "Closed" | "In Progress" | "Blocked", 
-          issueCount: number, 
-          issues: [
+          "status": "Closed" | "In Progress" | "Blocked",
+          "issueCount": number,
+          "issues": [
             {
-              issueKey: string, 
-              name: string, 
-              priority: "P0" | "P1" | "P2" | "P3", 
-              part: string
+              "issueKey": string,
+              "name": string,
+              "priority": "P0" | "P1" | "P2" | "P3",
+              "part": string
             }
           ]
         }
       ]
     }
-    
-    The output should only contain JSON string
+
+    Ensure the output is strictly in the JSON format mentioned above.
   `;
 };
 
