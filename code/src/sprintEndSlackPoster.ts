@@ -5,6 +5,7 @@ interface SprintData {
     startDate: string;
     endDate: string;
     sprintVelocity: number,
+    plannedVelocity: number,
     closedIssues: number;
     inProgressIssues: number;
     blockedIssues: number;
@@ -61,7 +62,7 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     text: "🚀 Sprint Overview"
                 }
             },
-            // Sprint Meta-data Section (including Sprint Velocity)
+            // Sprint Meta-data Section
             {
                 type: "section",
                 fields: [
@@ -87,7 +88,11 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     },
                     {
                         type: "mrkdwn",
-                        text: `*Sprint Velocity:*\n${sprintData.sprintVelocity} (Sum of efforts for completed issues)`
+                        text: `*Sprint Velocity (Actual):*\n${sprintData.sprintVelocity}`
+                    },
+                    {
+                        type: "mrkdwn",
+                        text: `*Planned Velocity:*\n${sprintData.plannedVelocity}`
                     }
                 ]
             },

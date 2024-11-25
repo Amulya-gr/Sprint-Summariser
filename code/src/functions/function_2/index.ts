@@ -103,6 +103,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
       startDate: string, 
       endDate: string, 
       sprintVelocity: number,
+      plannedVelocity: number,
       closedIssues: number, 
       inProgressIssues: number, 
       blockedIssues: number, 
