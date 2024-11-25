@@ -82,21 +82,27 @@ function getLastThreeSprintSummaries(): SprintData[] {
 
 // Helper function to format issues
 const formatIssues = (issues: any[]) => {
-  return issues.map((issue: any) => ({
-    title: issue.title,
-    issueDisplayId: issue.display_id,
-    stage: issue.stage.name,
-    state: issue.stage.state,
-    applies_to_part: issue.applies_to_part,
-    priority: issue.priority,
-    owner: issue.owned_by.map((owner: any) => owner.display_name).join(", "),
-    actualStartDate: issue.actual_start_date,
-    actualCloseDate: issue.actual_close_date,
-    sprintStartDate: issue.sprint.start_date,
-    sprintEndDate: issue.sprint.end_date,
-    sprintName: issue.sprint.name,
-    description: issue.body || "No description provided",
-  }));
+  return issues.map((issue: any) => {
+    // Determine if the issue is blocked by checking tags
+    const hasBlockedTag = issue.tags?.some((tag: any) => tag.tag.name.toLowerCase() === "blocked");
+
+    return {
+      title: issue.title,
+      issueDisplayId: issue.display_id,
+      stage: issue.stage.name,
+      state: issue.stage.state,
+      applies_to_part: issue.applies_to_part,
+      priority: issue.priority,
+      owner: issue.owned_by.map((owner: any) => owner.display_name).join(", "),
+      actualStartDate: issue.actual_start_date,
+      actualCloseDate: issue.actual_close_date,
+      sprintStartDate: issue.sprint.start_date,
+      sprintEndDate: issue.sprint.end_date,
+      sprintName: issue.sprint.name,
+      description: issue.body || "No description provided",
+      hasBlockedTag: hasBlockedTag
+    };
+  });
 };
 
 // Helper function to construct OpenAI prompt
@@ -124,11 +130,11 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
     - **Issue Summary**: Offer a breakdown of issues by status (Closed, In Progress, Blocked).
     - **Comparison with Previous Sprints**: Analyze trends, improvements, or regressions by comparing the current sprint's performance to the last three sprints. Focus on areas such as velocity, issue resolution rates, blockers, and overall sprint outcomes.
 
-    For each issue, determine if it is closed, in progress, or blocked based on its stage.
+    If an issue hasBlockedTag as true then categorize it as blocked.
+    For rest of the issues, determine if it is closed or in progress based on its stage.
 
     Closed category includes: completed, won't_fix, duplicate stages
     In progress category includes: in_development, in_review, in_testing, in_deployment
-    Blocked category includes: triage, backlog, prioritised
 
     Current Sprint Data:
         Sprint Velocity: ${sprintVelocity}, Planned Velocity: ${plannedVelocity}
