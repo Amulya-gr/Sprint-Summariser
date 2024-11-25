@@ -27,7 +27,8 @@ interface SprintData {
   sprintName: string;
   startDate: string;
   endDate: string;
-  sprintVelocity: number,
+  sprintVelocity: number;
+  plannedVelocity: number;
   closedIssues: number;
   inProgressIssues: number;
   blockedIssues: number;
@@ -50,8 +51,8 @@ interface Issue {
   part: string; // Part of the project the issue is related to, e.g., "Frontend", "Backend"
 }
 
-// Helper function to format issues for OpenAI prompt
-const formatIssuesForPrompt = (issues: any[]) => {
+// Helper function to format issues
+const formatIssues = (issues: any[]) => {
   return issues.map((issue: any) => ({
     title: issue.title,
     issueDisplayId: issue.display_id,
@@ -70,7 +71,7 @@ const formatIssuesForPrompt = (issues: any[]) => {
 };
 
 // Helper function to construct OpenAI prompt
-const constructPrompt = (issues: any[], sprintVelocity: number) => {
+const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number) => {
   return `
     You are tasked with analyzing and summarizing the DevRev sprint data to support effective sprint retrospectives. The goal is to provide a concise yet comprehensive overview that highlights successes, challenges, and actionable future insights, which will be shared with the team via Slack.
 
@@ -89,7 +90,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
     In progress category includes: in_development, in_review, in_testing, in_deployment
     Blocked category includes: triage, backlog, prioritised
 
-    Sprint Velocity: ${sprintVelocity}
+    Sprint Velocity: ${sprintVelocity}, Planned Velocity: ${plannedVelocity}
 
     Here are the sprint issues:
 
@@ -132,9 +133,9 @@ const constructPrompt = (issues: any[], sprintVelocity: number) => {
 const generateSprintOverview = async (
   data: any
 ): Promise<SprintData | null> => {
-  const issues = formatIssuesForPrompt(data.works);
-  const sprintVelocity = calculateSprintVelocity(issues);
-  const prompt = constructPrompt(issues, sprintVelocity);
+  const issues = formatIssues(data);
+  const {actualVelocity, plannedVelocity} = calculateSprintVelocity(issues);
+  const prompt = constructPrompt(issues, actualVelocity, plannedVelocity);
 
   try {
     console.info("Sending request to OpenAI for sprint overview generation...");
@@ -172,24 +173,53 @@ const generateSprintOverview = async (
 
 async function handleMidSprintAlertEvent(event: any): Promise<void> {
   console.info("Handling mid-sprint alert event...");
-  const sprintIssues = await fetchSprintIssues(event, ["triage", "backlog", "prioritized"]);
+  
+  // Fetch all sprint issues
+  const sprintIssues = await fetchSprintIssues(event);
+  const formatedIssues = formatIssues(sprintIssues);
+  const { actualVelocity, plannedVelocity } = calculateSprintVelocity(formatedIssues);
+
+  const filteredStages = ["triage", "backlog", "prioritized"];
+  const filteredIssues = formatedIssues.filter(issue =>
+    filteredStages.includes(issue.stage.toLowerCase())
+  );
 
   if (sprintIssues && sprintIssues.length > 0) {
     console.info("Posting mid-sprint alert to Slack...");
     const webhookUrl = event.input_data.global_values["webhook_url"];
-    const issueList = sprintIssues.map(
+    const remainingVelocity = plannedVelocity - actualVelocity;
+
+    // Generate issue list for the message
+    let issueList = filteredIssues.map(
       (issue) =>
-        `- ${issue.name} (ID: ${issue.id}, Stage: ${issue.stage?.name || "Unknown"}, Priority: ${issue.priority || "None"})`
+        `- ${issue.title} (ID: ${issue.issueDisplayId}, Stage: ${issue.stage || "Unknown"}, Priority: ${issue.priority || "None"})`
     ).join("\n");
     
-    const message = `🚨 *Mid-Sprint Alert* 🚨\nThe following issues are in Open state:\n\n${issueList}`;
+    if (!issueList) {
+      issueList = "*None of the issues are open.*";
+    }
+
+    // Construct the Slack message
+    const message = `
+      🚨 *Mid-Sprint Alert* 🚨
+      The following issues are in Open state:
+
+      ${issueList}
+
+      *Sprint Velocity Update:*
+      - Planned Velocity: ${plannedVelocity}
+      - Velocity Achieved So Far: ${actualVelocity}
+      - Remaining Velocity Needed: ${remainingVelocity}
+      
+      Keep pushing to meet the sprint goals! 💪
+    `;
     await postMidSprintAlertToSlack(webhookUrl, message);
   } else {
     console.info("No issues found in specified stages for mid-sprint alert.");
   }
 }
 
-async function fetchSprintIssues(event: any, stages: string[]): Promise<any[]> {
+async function fetchSprintIssues(event: any): Promise<any[]> {
   const devrevPAT = event.context.secrets.service_account_token;
   const API_BASE = event.execution_metadata.devrev_endpoint;
   const devrevSDK = client.setup({
@@ -200,7 +230,6 @@ async function fetchSprintIssues(event: any, stages: string[]): Promise<any[]> {
   const queryParams = {
     type: [WorkType.Issue],
     "issue.sprint": event.payload.object_id, // Filter by sprint ID
-    "stage.name": stages, // Filter by stages
   };
 
   try {
@@ -216,24 +245,10 @@ async function fetchSprintIssues(event: any, stages: string[]): Promise<any[]> {
 
 // Function to handle the sprint end event and post the summary
 async function handleSprintEndEvent(event: any): Promise<void> {
-  const devrevPAT = event.context.secrets.service_account_token;
-  const API_BASE = event.execution_metadata.devrev_endpoint;
-  const devrevSDK = client.setup({
-    endpoint: API_BASE,
-    token: devrevPAT,
-  });
-
-  const queryParams = {
-    type: [WorkType.Issue],
-    "issue.sprint": event.payload.object_id, // Filter by a specific sprint
-  };
-
   try {
-    console.info("Fetching sprint issues from DevRev...");
-    const response = await devrevSDK.worksList(queryParams);
-    console.info("Fetched issues:", response.data);
+    const sprintIssues = await fetchSprintIssues(event);
 
-    const sprintSummary = await generateSprintOverview(response.data);
+    const sprintSummary = await generateSprintOverview(sprintIssues);
 
     if (sprintSummary) {
       console.info("Posting sprint summary to Slack...");
@@ -247,37 +262,22 @@ async function handleSprintEndEvent(event: any): Promise<void> {
   }
 }
 
-function calculateSprintVelocity(issues: any[]): number {
-  let totalEffort = 0;
+function calculateSprintVelocity(issues: any[]): { actualVelocity: number, plannedVelocity: number } {
+  let actualVelocity = 0;
+  let plannedVelocity = 0;
 
-  // Extract sprint start and end dates from the first issue (assuming consistent sprint metadata)
-  const sprintStartDate = issues[0]?.sprintStartDate;
-  const sprintEndDate = issues[0]?.sprintEndDate;
-
-  // Ensure sprint dates are valid
-  if (!sprintStartDate || !sprintEndDate) {
-    console.error("Sprint start or end date is missing from issue data.");
-    return 0;
-  }
-
-  const sprintStart = new Date(sprintStartDate).getTime();
-  const sprintEnd = new Date(sprintEndDate).getTime();
-
-  // Iterate through issues and calculate total effort for closed tasks within the sprint
   issues.forEach((issue) => {
-    if (issue.stage.toLowerCase() === "completed" && issue.actualCloseDate) {
-      const actualCloseDate = new Date(issue.actualCloseDate).getTime();
+    const effort = priorityToEffort[issue.priority] || 0; // Default to 0 if priority is not mapped
+    plannedVelocity += effort; // Add all issues to planned velocity
 
-      // Consider issues closed within the sprint's timeframe
-      if (actualCloseDate >= sprintStart && actualCloseDate <= sprintEnd) {
-        const effort = priorityToEffort[issue.priority] || 0; // Default effort is 0 if priority is not mapped
-        totalEffort += effort;
-      }
+    // Add effort of completed issues to actual velocity
+    if (issue.stage.toLowerCase() === "completed") {
+      actualVelocity += effort;
     }
   });
 
-  console.info(`Calculated sprint velocity: ${totalEffort}`);
-  return totalEffort;
+  console.info(`Calculated actual velocity: ${actualVelocity}, planned velocity: ${plannedVelocity}`);
+  return { actualVelocity, plannedVelocity };
 }
 
 // Main entry point
