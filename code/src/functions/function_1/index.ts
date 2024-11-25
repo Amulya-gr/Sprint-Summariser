@@ -43,21 +43,61 @@ async function handleWorkEvent(event: any) {
       };
 
       sprintStore.set(sprint.id, sprintDetails);
-      // Scheduling the sprint end event
+      // Schedule the sprint end event and mid-sprint alert event
       await scheduleSprintEndEvent(sprintDetails, devrevPAT, event.input_data);
+      await scheduleMidSprintAlertEvent(sprintDetails, devrevPAT, event.input_data);
     }
   }
 }
 
-// Schedule an event using DevRev API
+// Schedule a sprint end event
 async function scheduleSprintEndEvent(
   sprint: SprintDetails,
   devrevPAT: string,
   inputData: any
 ): Promise<void> {
+  await scheduleEvent(
+    sprint,
+    devrevPAT,
+    inputData,
+    "sprint-end-event",
+    sprint.endDate,
+    `delayed-run-${sprint.id}`
+  );
+}
+
+// Schedule a mid-sprint alert event
+async function scheduleMidSprintAlertEvent(
+  sprint: SprintDetails,
+  devrevPAT: string,
+  inputData: any
+): Promise<void> {
+  const sprintStart = new Date(sprint.startDate).getTime();
+  const sprintEnd = new Date(sprint.endDate).getTime();
+  const midSprintTime = new Date((sprintStart + sprintEnd) / 2).toISOString();
+
+  await scheduleEvent(
+    sprint,
+    devrevPAT,
+    inputData,
+    "mid-sprint-alert-event",
+    midSprintTime,
+    `mid-sprint-alert-${sprint.id}`
+  );
+}
+
+// General function to schedule an event using DevRev API
+async function scheduleEvent(
+  sprint: SprintDetails,
+  devrevPAT: string,
+  inputData: any,
+  eventType: string,
+  eventTime: string,
+  eventKey: string
+): Promise<void> {
   const url = "https://api.devrev.ai/event-sources.schedule";
   const delaySecs = Math.floor(
-    (new Date(sprint.endDate).getTime() - Date.now()) / 1000
+    (new Date(eventTime).getTime() - Date.now()) / 1000
   );
   const eventPayload = {
     object_id: sprint.id,
@@ -72,9 +112,9 @@ async function scheduleSprintEndEvent(
   const req = {
     id: inputData.event_sources["scheduled-events"],
     payload: payloadBytes,
-    event_type: "work-created-scheduled-event",
+    event_type: eventType,
     publish_at: publishAt,
-    event_key: `delayed-run-${sprint.id}`,
+    event_key: eventKey,
   };
 
   try {
@@ -84,9 +124,9 @@ async function scheduleSprintEndEvent(
         authorization: devrevPAT,
       },
     });
-    console.log("Scheduled event response:", response.data);
+    console.log(`Scheduled ${eventType} response:`, response.data);
   } catch (error) {
-    console.error("Error scheduling sprint end event:", error);
+    console.error(`Error scheduling ${eventType}:`, error);
   }
 }
 
