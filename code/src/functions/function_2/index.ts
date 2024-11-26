@@ -12,15 +12,15 @@ const openai = new OpenAI({
 
 // Priority-to-effort mapping
 const priorityToEffort: Record<string, number> = {
-  P0: 8, // Critical tasks
-  P1: 5, // High priority
-  P2: 3, // Medium priority
-  P3: 1  // Low priority
+  "p0": 8, // Critical tasks
+  "p1": 5, // High priority
+  "p2": 3, // Medium priority
+  "p3": 1  // Low priority
 };
 
 const SPRINT_EVENTS = {
-  END: "sprint-end-event",
-  MID: "mid-sprint-alert-event",
+  END: "custom:sprint-end-event",
+  MID: "custom:mid-sprint-alert-event",
 };
 
 interface SprintData {
@@ -29,12 +29,14 @@ interface SprintData {
   endDate: string;
   sprintVelocity: number;
   plannedVelocity: number;
+  sprintGrade: string;
+  openIssues: number;
   closedIssues: number;
   inProgressIssues: number;
   blockedIssues: number;
-  whatWentWell: string;
-  whatWentWrong: string;
-  retrospectiveInsights: string;
+  whatWentWell: string[];
+  whatWentWrong: string[];
+  retrospectiveInsights: string[];
   issuesSummary: IssueSummary[];
   comparisonWithPreviousSprints: {
     velocityTrend: string;
@@ -45,16 +47,16 @@ interface SprintData {
 }
 
 interface IssueSummary {
-  status: string; // e.g., "Closed", "In Progress", "Blocked"
+  status: string; // e.g., "Open", "Closed", "In Progress", "Blocked"
   issueCount: number;
-  issues: Issue[]; // Array of issues with their details
+  issues: Issue[];
 }
 
 interface Issue {
-  issueKey: string; // Unique identifier for the issue
-  name: string; // Name of the issue (e.g., "Fix UI Bug", "API Optimization")
-  priority: string; // e.g., "High", "Medium", "Low"
-  part: string; // Part of the project the issue is related to, e.g., "Frontend", "Backend"
+  issueKey: string;
+  name: string;
+  priority: string;
+  part: string;
 }
 
 const sprintSummaries: Record<string, SprintData> = {};
@@ -106,13 +108,15 @@ const formatIssues = (issues: any[]) => {
 };
 
 // Helper function to construct OpenAI prompt
-const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number, previousSprints: SprintData[]) => {
+const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number, sprintGrade: string, previousSprints: SprintData[]) => {
   // Extract relevant data for the last three sprints
   const previousSprintsData = previousSprints.map((sprint) => ({
     sprintName: sprint.sprintName,
     sprintEndDate: sprint.endDate,
     sprintVelocity: sprint.sprintVelocity,
     plannedVelocity: sprint.plannedVelocity,
+    sprintGrade: sprint.sprintGrade,
+    openIssues: sprint.openIssues,
     closedIssues: sprint.closedIssues,
     inProgressIssues: sprint.inProgressIssues,
     blockedIssues: sprint.blockedIssues,
@@ -123,29 +127,33 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
 
     Your summary must include:
     
-    - **What went well**: Identify tasks or aspects of the sprint that were successful. Look for completed issues that had a significant positive impact, or any issues that were particularly well-executed. Consider the priority, state, and whether the issues were completed on time.
+    - **What went well**: Identify tasks or aspects of the sprint that were successful. Look for completed issues that had a significant positive impact, or any issues that were particularly well-executed. Consider the priority, state, and whether the issues were completed on time. Give 4 insightful bullet points as an array of strings.
     
-    - **What went wrong**: Identify issues or blockers faced during the sprint. Look for issues that were blocked, delayed, or encountered significant challenges. Analyze their state, stages, and whether they were completed or remained in progress beyond expectations.
+    - **What went wrong**: Identify open issues or blockers faced during the sprint. Look for issues that were blocked, delayed, or encountered significant challenges. Analyze their state, stages, and whether they were completed or remained in progress beyond expectations. Give 4 insightful bullet points as an array of strings.
     
-    - **Retrospective insights**: Provide actionable insights for future sprints. Reflect on patterns such as types of issues more prone to delays or blockages, and recommend improvements for future planning and execution.
+    - **Retrospective insights**: Provide actionable insights for future sprints. Reflect on patterns such as types of issues more prone to delays or blockages, and recommend improvements for future planning and execution. Give 4 insightful bullet points as an array of strings.
 
-    - **Issue Summary**: Provide a breakdown of issues by status: "Closed", "In Progress", and "Blocked". Make sure to categorize issues accurately.
+    - **Issue Summary**: Provide a breakdown of issues by status: "Open", "Closed", "In Progress", and "Blocked". Make sure to categorize issues accurately. Also sort them by category (p0 has highest priority).
     
     - **Comparison with Previous Sprints**: Analyze trends or regressions by comparing the current sprint's performance with the last three sprints. Focus on areas like velocity, issue resolution rates, blockers, and overall sprint outcomes.
 
     **Categorization**:
-    - If an issue has the \`hasBlockedTag\` set to \`true\`, categorize it as "Blocked".
-    - Otherwise, determine its status based on the following stages:
+    - First check if an issue has the \`hasBlockedTag\` set to \`true\`, categorize it as "Blocked".
+    - For remaining issues, determine its status based on the following stages:
+      - **Open**: Issues in stages such as triage, backlog, prioritized.
       - **Closed**: Issues in stages such as completed, won't_fix, duplicate.
       - **In Progress**: Issues in stages such as in_development, in_review, in_testing, in_deployment.
 
     Current Sprint Data:
         - Sprint Velocity: ${sprintVelocity}
         - Planned Velocity: ${plannedVelocity}
+        - Sprint Grade: ${sprintGrade}
         - Sprint Issues: ${JSON.stringify(issues, null, 2)}
 
     Last 3 Sprints Data:
     ${JSON.stringify(previousSprintsData, null, 2)}
+
+    Sum of issues in all the categories should be equal to total number of issues.
 
     Please provide the summary in the following strict JSON format:
 
@@ -155,12 +163,14 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
       "endDate": string,
       "sprintVelocity": number,
       "plannedVelocity": number,
+      "sprintGrade": string,
+      "openIssues": number,
       "closedIssues": number,
       "inProgressIssues": number,
       "blockedIssues": number,
-      "whatWentWell": string,
-      "whatWentWrong": string,
-      "retrospectiveInsights": string,
+      "whatWentWell": string[],
+      "whatWentWrong": string[],
+      "retrospectiveInsights": string[],
       "comparisonWithPreviousSprints": {
             "velocityTrend": string,
             "issueCompletionTrend": string,
@@ -169,7 +179,7 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
       },
       "issuesSummary": [
         {
-          "status": "Closed" | "In Progress" | "Blocked",
+          "status": "Open" | "Closed" | "In Progress" | "Blocked",
           "issueCount": number,
           "issues": [
             {
@@ -191,10 +201,11 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
 const generateSprintOverview = async (data: any, currentSprintId: string): Promise<SprintData | null> => {
   const issues = formatIssues(data);
   const { actualVelocity, plannedVelocity } = calculateSprintVelocity(issues);
+  const sprintGrade = calculateSprintGrade(actualVelocity, plannedVelocity);
 
   // Retrieve historical data for comparison
   const previousSprints = getLastThreeSprintSummaries();
-  const prompt = constructPrompt(issues, actualVelocity, plannedVelocity, previousSprints);
+  const prompt = constructPrompt(issues, actualVelocity, plannedVelocity, sprintGrade, previousSprints);
 
   try {
       const response = await openai.chat.completions.create({
@@ -210,7 +221,7 @@ const generateSprintOverview = async (data: any, currentSprintId: string): Promi
           const content = response.choices[0].message.content.trim();
           const sanitizedContent = content.replace(/```json/g, "").replace(/```/g, "");
           const sprintSummary = JSON.parse(sanitizedContent) as SprintData;
-
+          console.info(sprintSummary);
           // Save the current sprint summary
           saveSprintSummary(currentSprintId, sprintSummary);
 
@@ -225,16 +236,32 @@ const generateSprintOverview = async (data: any, currentSprintId: string): Promi
   }
 };
 
+function calculateSprintGrade(actualVelocity: number, plannedVelocity: number): string {
+  const percentageAchieved = (actualVelocity / plannedVelocity) * 100;
+
+  if (percentageAchieved >= 95) {
+    return "Exceptional";
+  } else if (percentageAchieved >= 80) {
+    return "Good";
+  } else if (percentageAchieved >= 60) {
+    return "Satisfactory";
+  } else if (percentageAchieved >= 40) {
+    return "Needs Improvement";
+  } else {
+    return "Poor";
+  }
+}
+
 async function handleMidSprintAlertEvent(event: any): Promise<void> {
   console.info("Handling mid-sprint alert event...");
-  
+
   // Fetch all sprint issues
   const sprintIssues = await fetchSprintIssues(event);
-  const formatedIssues = formatIssues(sprintIssues);
-  const { actualVelocity, plannedVelocity } = calculateSprintVelocity(formatedIssues);
+  const formattedIssues = formatIssues(sprintIssues);
+  const { actualVelocity, plannedVelocity } = calculateSprintVelocity(formattedIssues);
 
   const filteredStages = ["triage", "backlog", "prioritized"];
-  const filteredIssues = formatedIssues.filter(issue =>
+  const filteredIssues = formattedIssues.filter(issue =>
     filteredStages.includes(issue.stage.toLowerCase())
   );
 
@@ -242,32 +269,8 @@ async function handleMidSprintAlertEvent(event: any): Promise<void> {
     console.info("Posting mid-sprint alert to Slack...");
     const webhookUrl = event.input_data.global_values["webhook_url"];
     const remainingVelocity = plannedVelocity - actualVelocity;
-
-    // Generate issue list for the message
-    let issueList = filteredIssues.map(
-      (issue) =>
-        `- ${issue.title} (ID: ${issue.issueDisplayId}, Stage: ${issue.stage || "Unknown"}, Priority: ${issue.priority || "None"})`
-    ).join("\n");
     
-    if (!issueList) {
-      issueList = "*None of the issues are open.*";
-    }
-
-    // Construct the Slack message
-    const message = `
-      🚨 *Mid-Sprint Alert* 🚨
-      The following issues are in Open state:
-
-      ${issueList}
-
-      *Sprint Velocity Update:*
-      - Planned Velocity: ${plannedVelocity}
-      - Velocity Achieved So Far: ${actualVelocity}
-      - Remaining Velocity Needed: ${remainingVelocity}
-      
-      Keep pushing to meet the sprint goals! 💪
-    `;
-    await postMidSprintAlertToSlack(webhookUrl, message);
+    await postMidSprintAlertToSlack(webhookUrl, filteredIssues, plannedVelocity, actualVelocity, remainingVelocity);
   } else {
     console.info("No issues found in specified stages for mid-sprint alert.");
   }
@@ -339,7 +342,7 @@ export const run = async (events: any[]): Promise<void> => {
   console.info("Processing events:", JSON.stringify(events));
 
   for (const event of events) {
-    switch (event.event_type) {
+    switch (event.execution_metadata.event_type) {
       case SPRINT_EVENTS.END:
         await handleSprintEndEvent(event);
         break;
@@ -347,7 +350,7 @@ export const run = async (events: any[]): Promise<void> => {
         await handleMidSprintAlertEvent(event);
         break;
       default:
-        console.warn(`Unhandled event type: ${event.event_type}`);
+        console.warn(`Unhandled event type: ${event.execution_metadata.event_type}`);
     }
   }
 };
