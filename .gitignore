@@ -6,9 +6,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Config files
-code/src/config.json
-
 # Build and cache files
 dist/
 build/
