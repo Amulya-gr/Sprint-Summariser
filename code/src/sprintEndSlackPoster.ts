@@ -6,12 +6,14 @@ interface SprintData {
     endDate: string;
     sprintVelocity: number,
     plannedVelocity: number,
-    closedIssues: number;
-    inProgressIssues: number;
+    sprintGrade: string,
+    openIssues: number,
+    closedIssues: number,
+    inProgressIssues: number,
     blockedIssues: number;
-    whatWentWell: string;
-    whatWentWrong: string;
-    retrospectiveInsights: string;
+    whatWentWell: string[];
+    whatWentWrong: string[];
+    retrospectiveInsights: string[];
     issuesSummary: IssueSummary[];
     comparisonWithPreviousSprints: {
         velocityTrend: string;
@@ -22,16 +24,16 @@ interface SprintData {
 }
 
 interface IssueSummary {
-    status: string;  // e.g., "Closed", "In Progress", "Blocked"
+    status: string;  // e.g., "Open", "Closed", "In Progress", "Blocked"
     issueCount: number;
-    issues: Issue[];  // Array of issues with their details
+    issues: Issue[];
 }
 
 interface Issue {
-    issueKey: string;  // Unique identifier for the issue
-    name: string;      // Name of the issue (e.g., "Fix UI Bug", "API Optimization")
-    priority: string;  // e.g., "High", "Medium", "Low"
-    part: string;      // Part of the project the issue is related to, e.g., "Frontend", "Backend"
+    issueKey: string;
+    name: string;
+    priority: string;
+    part: string;
 }
 
 /**
@@ -41,6 +43,9 @@ interface Issue {
  * @param sprintData - The sprint data to include in the summary.
  */
 export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: SprintData): Promise<void> {
+    // Calculate percentage inline
+    const percentageAchieved = Math.round((sprintData.sprintVelocity / sprintData.plannedVelocity) * 100);
+
     // Create issue status sections based on provided summaries
     const issueStatusSections = sprintData.issuesSummary.map((issueStatus) => {
         return {
@@ -78,6 +83,10 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                     },
                     {
                         type: "mrkdwn",
+                        text: `*Sprint Grade:*\n${sprintData.sprintGrade} (${percentageAchieved}%)`
+                    },
+                    {
+                        type: "mrkdwn",
                         text: `*Start Date:*\n${new Intl.DateTimeFormat("en-US", {
                             year: "numeric",
                             month: "long",
@@ -110,6 +119,10 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
                 fields: [
                     {
                         type: "mrkdwn",
+                        text: `*Open Issues:*\n${sprintData.openIssues}`
+                    },
+                    {
+                        type: "mrkdwn",
                         text: `*Closed Issues:*\n${sprintData.closedIssues}`
                     },
                     {
@@ -134,10 +147,15 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             },
             {
                 type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: sprintData.whatWentWell
-                }
+                fields: sprintData.whatWentWell.length > 0
+                    ? sprintData.whatWentWell.map(item => ({
+                        type: "mrkdwn",
+                        text: `• ${item}`
+                    }))
+                    : [{
+                        type: "mrkdwn",
+                        text: "No significant highlights for this sprint."
+                    }]
             },
             {
                 type: "header",
@@ -148,10 +166,15 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             },
             {
                 type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: sprintData.whatWentWrong
-                }
+                fields: sprintData.whatWentWrong.length > 0
+                    ? sprintData.whatWentWrong.map(item => ({
+                        type: "mrkdwn",
+                        text: `• ${item}`
+                    }))
+                    : [{
+                        type: "mrkdwn",
+                        text: "No significant issues reported for this sprint."
+                    }]
             },
             {
                 type: "header",
@@ -162,10 +185,15 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             },
             {
                 type: "section",
-                text: {
-                    type: "mrkdwn",
-                    text: sprintData.retrospectiveInsights
-                }
+                fields: sprintData.retrospectiveInsights.length > 0
+                    ? sprintData.retrospectiveInsights.map(item => ({
+                        type: "mrkdwn",
+                        text: `• ${item}`
+                    }))
+                    : [{
+                        type: "mrkdwn",
+                        text: "No retrospective insights available for this sprint."
+                    }]
             },
             {
                 type: "divider"
@@ -223,6 +251,6 @@ export async function postSprintSummaryToSlack(webhookUrl: string, sprintData: S
             console.error('Failed to post to Slack. Status:', response.status);
         }
     } catch (error: any) {
-        console.error('Error posting to Slack:', error.message);
+        console.error('Error posting to Slack:', error);
     }
 }
