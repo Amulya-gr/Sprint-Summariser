@@ -1,38 +1,40 @@
 [
   {
     "payload": {
-      "actor_id": "don:identity:dvrv-us-1:devo/XXXXXX:devu/1",
-      "command_id": "don:integration:dvrv-us-1:devo/XXXXXX:namespace/devrev:command/comment_here",
-      "dev_org": "don:identity:dvrv-us-1:devo/XXXXXX",
-      "parameters": "",
-      "parent_id": "don:integration:dvrv-us-1:devo/XXXXXX:snap_in/1663a15e-8369-4260-8952-6d68bfd316c8",
-      "request_id": "XXXXXXXXXXX",
-      "source_id": "don:core:dvrv-us-1:devo/XXXXXX:issue/31"
+      "name": "Sprint 1",
+      "object_id": "don:core:dvrv-in-1:devo/21Di74pCRE:vista/45:vista_group_item/90"
     },
     "context": {
-      "dev_oid": "don:identity:dvrv-us-1:devo/XXXXXX",
-      "automation_id": "",
-      "source_id": "don:integration:dvrv-us-1:devo/XXXXXX:namespace/devrev:command/comment_here",
-      "snap_in_id": "don:integration:dvrv-us-1:devo/XXXXXX:snap_in/1663a15e-8369-4260-8952-6d68bfd316c8",
-      "snap_in_version_id": "don:integration:dvrv-us-1:devo/XXXXXX:snap_in_package/80e5139a-8475-4230-ae56-3f2f07702c14:snap_in_version/9b524f10-1f46-4456-a356-73dc5266a4f3",
-      "service_account_id": "",
       "secrets": {
-        "actor_session_token": "XXXXX.XXXX.XXXX",
-        "service_account_token": "XXXXX.XXXXXX"
-      }
+        "service_account_token": "<REDACTED:JWT>"
+      },
+      "service_account_id": "don:identity:dvrv-in-1:devo/21Di74pCRE:svcacc/41",
+      "dev_oid": "don:identity:dvrv-in-1:devo/21Di74pCRE",
+      "source_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:automation/94ab9719-ef98-406a-8a9e-04dbd0d88cba",
+      "snap_in_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:snap_in/7d36b716-03b7-4b33-a826-8422350fe3dd",
+      "snap_in_version_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:snap_in_package/d8ee1fd7-fe22-428c-b59d-7f2abe741ce1:snap_in_version/df5df846-3ead-4f73-be7f-4c090719c809",
+      "user_id": "don:identity:dvrv-in-1:devo/21Di74pCRE:svcacc/41",
+      "attempt_number": 1
     },
     "execution_metadata": {
-      "request_id": "XXXXXXXXXXX",
+      "event_type": "custom:sprint-end-event",
       "function_name": "function_2",
+      "request_id": "",
       "devrev_endpoint": "https://api.devrev.ai"
     },
     "input_data": {
-      "global_values": {},
+      "global_values": {
+        "webhook_url": "<REDACTED:SLACK-WEBHOOK-URL>nn"
+      },
       "event_sources": {
-        "devrev-webhook": "don:integration:dvrv-us-1:devo/XXXXXX:event_source/eaddf652-a78d-4389-8723-786c63360126"
+        "devrev-webhook": "don:integration:dvrv-in-1:devo/21Di74pCRE:event_source/f6abb4ec-5e71-4150-94de-8f15e71eb0bc",
+        "scheduled-events": "don:integration:dvrv-in-1:devo/21Di74pCRE:event_source/04f0b349-eba3-4f63-8f32-a99de84cb0a7"
       },
       "keyrings": null,
-      "resources": { "keyrings": {}, "tags": {} }
+      "resources": {
+        "keyrings": {},
+        "tags": {}
+      }
     }
   }
 ]

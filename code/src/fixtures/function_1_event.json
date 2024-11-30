@@ -1,159 +1,184 @@
 [
   {
     "payload": {
-      "id": "don:integration:dvrv-us-1:devo/XXXXXX:webhook/ovtfa4mg:webhook_event/uzX6Pqe9tQc",
-      "timestamp": "2023-08-03T06:03:21.932268Z",
+      "id": "don:integration:dvrv-in-1:devo/21Di74pCRE:webhook/ALoYOaJs:webhook_event/_NPzJygNR8o",
+      "timestamp": "2024-11-30T14:57:56.873075Z",
       "type": "work_created",
-      "unique_key": "XXXX=",
-      "webhook_id": "don:integration:dvrv-us-1:devo/XXXXXX:webhook/ovtfa4mg",
+      "unique_key": "ZG9uOmludGVncmF0aW9uOmR2cnYtaW4tMTpkZXZvLzIxRGk3NHBDUkU6ZXZlbnRfc291cmNlL2Y2YWJiNGVjLTVlNzEtNDE1MC05NGRlLThmMTVlNzFlYjBiYw==",
+      "webhook_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:webhook/ALoYOaJs",
       "work_created": {
         "work": {
-          "type": "issue",
-          "age_days": 13.75945837962963,
           "applies_to_part": {
-            "type": "product",
-            "display_id": "PROD-4",
-            "id": "don:core:dvrv-us-1:devo/XXXXXX:product/4",
-            "id_v1": "don:DEV-XXXXXX:product:4",
-            "name": "Others"
+            "display_id": "FEAT-1",
+            "id": "don:core:dvrv-in-1:devo/21Di74pCRE:feature/1",
+            "id_v1": "don:DEV-21Di74pCRE:feature:1",
+            "name": "Default Feature 1",
+            "owned_by": [
+              {
+                "display_handle": "devrev-bot",
+                "display_id": "SYSU-1",
+                "display_name": "devrev-bot",
+                "full_name": "DevRev Bot",
+                "id": "don:identity:dvrv-in-1:devo/21Di74pCRE:sysu/1",
+                "id_v1": "don:DEV-21Di74pCRE:sys_user:SYSU-1",
+                "state": "active",
+                "thumbnail": "https://api.devrev.ai/internal/display-picture/~bot~.png",
+                "type": "sys_user"
+              }
+            ],
+            "stage": {
+              "name": ""
+            },
+            "type": "feature"
           },
-          "body": "body of the issue",
           "created_by": {
-            "type": "dev_user",
-            "display_handle": "john-doe",
-            "display_id": "DEVU-1046",
-            "display_name": "john-doe",
-            "email": "john.doe@gmail.com",
-            "full_name": "john doe",
-            "id": "don:identity:dvrv-us-1:devo/XXXXXX:devu/1046",
-            "id_v1": "don:DEV-XXXXXX:dev_user:DEVU-1046",
-            "state": "shadow",
-            "thumbnail": "https://api.devrev.ai/internal/display-picture/john%20doe.svg"
+            "display_handle": "Amulya G R",
+            "display_id": "DEVU-1",
+            "display_name": "Amulya G R",
+            "display_picture": {
+              "display_id": "artifact-4",
+              "file": {
+                "type": "image/jpeg"
+              },
+              "id": "don:core:dvrv-in-1:devo/21Di74pCRE:artifact/4",
+              "id_v1": "don:DEV-21Di74pCRE:artifact:4",
+              "original_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+              "preview_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ"
+            },
+            "email": "nnm23cs024@nmamit.in",
+            "full_name": "AMULYA G R",
+            "id": "don:identity:dvrv-in-1:devo/21Di74pCRE:devu/1",
+            "id_v1": "don:DEV-21Di74pCRE:dev_user:DEVU-1",
+            "state": "active",
+            "thumbnail": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+            "type": "dev_user"
           },
-          "created_date": "2023-08-04T17:09:39.278Z",
-          "custom_schema_fragments": [
-            "don:core:dvrv-us-1:devo/XXXXXX:custom_type_fragment/18"
-          ],
-          "display_id": "ISS-9",
-          "id": "don:core:dvrv-us-1:devo/XXXXXX:issue/9",
-          "id_v1": "don:DEV-XXXXXX:issue:9",
+          "created_date": "2024-11-30T14:57:55.49Z",
+          "custom_fields": null,
+          "display_id": "ISS-266",
+          "id": "don:core:dvrv-in-1:devo/21Di74pCRE:issue/266",
+          "id_v1": "don:DEV-21Di74pCRE:issue:266",
           "modified_by": {
-            "type": "dev_user",
-            "display_handle": "dane-doe",
-            "display_id": "DEVU-4185",
-            "display_name": "dane-doe",
-            "email": "dane.doe@gmail.com",
-            "full_name": "John Doe doe",
-            "id": "don:identity:dvrv-us-1:devo/XXXXXX:devu/4185",
-            "id_v1": "don:DEV-XXXXXX:dev_user:DEVU-4185",
-            "state": "shadow",
-            "thumbnail": "https://api.devrev.ai/internal/display-picture/John%20Sai%20doe.svg"
+            "display_handle": "Amulya G R",
+            "display_id": "DEVU-1",
+            "display_name": "Amulya G R",
+            "display_picture": {
+              "display_id": "artifact-4",
+              "file": {
+                "type": "image/jpeg"
+              },
+              "id": "don:core:dvrv-in-1:devo/21Di74pCRE:artifact/4",
+              "id_v1": "don:DEV-21Di74pCRE:artifact:4",
+              "original_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+              "preview_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ"
+            },
+            "email": "nnm23cs024@nmamit.in",
+            "full_name": "AMULYA G R",
+            "id": "don:identity:dvrv-in-1:devo/21Di74pCRE:devu/1",
+            "id_v1": "don:DEV-21Di74pCRE:dev_user:DEVU-1",
+            "state": "active",
+            "thumbnail": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+            "type": "dev_user"
           },
-          "modified_date": "2023-08-04T22:09:19.164Z",
+          "modified_date": "2024-11-30T14:57:55.49Z",
           "owned_by": [
             {
-              "type": "dev_user",
-              "display_handle": "jane-doe",
-              "display_id": "DEVU-2588",
-              "display_name": "jane-doe",
-              "email": "jane.doe@gmail.com",
-              "full_name": "doe jane",
-              "id": "don:identity:dvrv-us-1:devo/XXXXXX:devu/2588",
-              "id_v1": "don:DEV-XXXXXX:dev_user:DEVU-2588",
-              "state": "shadow",
-              "thumbnail": "https://api.devrev.ai/internal/display-picture/doe%20jane%20.svg"
+              "display_handle": "Amulya G R",
+              "display_id": "DEVU-1",
+              "display_name": "Amulya G R",
+              "display_picture": {
+                "display_id": "artifact-4",
+                "file": {
+                  "type": "image/jpeg"
+                },
+                "id": "don:core:dvrv-in-1:devo/21Di74pCRE:artifact/4",
+                "id_v1": "don:DEV-21Di74pCRE:artifact:4",
+                "original_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+                "preview_url": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ"
+              },
+              "email": "nnm23cs024@nmamit.in",
+              "full_name": "AMULYA G R",
+              "id": "don:identity:dvrv-in-1:devo/21Di74pCRE:devu/1",
+              "id_v1": "don:DEV-21Di74pCRE:dev_user:DEVU-1",
+              "state": "active",
+              "thumbnail": "https://s3.ap-south-1.amazonaws.com/devrev-prod-artifacts-public-apsouth1/0oxoSfixsnpnNigu4pNcfQ",
+              "type": "dev_user"
             }
           ],
-          "priority": "p3",
+          "priority": "p2",
+          "priority_v2": {
+            "id": 3,
+            "label": "P2",
+            "ordinal": 3
+          },
+          "sprint": {
+            "end_date": "2024-11-22T07:43:00Z",
+            "id": "don:core:dvrv-in-1:devo/21Di74pCRE:vista/28:vista_group_item/19",
+            "name": "Sprint 1",
+            "parent": {
+              "display_id": "vista-28",
+              "flavor": "sprint_board",
+              "id": "don:core:dvrv-in-1:devo/21Di74pCRE:vista/28",
+              "id_v1": "don:DEV-21Di74pCRE:vista:28",
+              "name": "hello",
+              "type": "grouped"
+            },
+            "start_date": "2024-11-20T05:48:15.079Z",
+            "state": "completed",
+            "type": "curated"
+          },
           "stage": {
-            "name": "backlog",
-            "notes": "Open",
-            "ordinal": 1000,
+            "name": "triage",
+            "notes": "",
+            "ordinal": 500,
             "stage": {
-              "id": "don:core:dvrv-us-1:devo/XXXXXX:custom_stage/1"
+              "id": "don:core:dvrv-in-1:devo/21Di74pCRE:custom_stage/6",
+              "name": "triage"
             },
             "state": {
-              "id": "don:core:dvrv-us-1:devo/XXXXXX:custom_state/1"
+              "id": "don:core:dvrv-in-1:devo/21Di74pCRE:custom_state/1",
+              "is_final": false,
+              "name": "open"
             }
           },
           "state": "open",
-          "stock_schema_fragment": "don:core:dvrv-us-1:stock_sf/5597",
-          "subtype": "jira_gmail.atlassian.net_support",
-          "tags": [
-            {
-              "id": {
-                "display_id": "TAG-45",
-                "id": "don:core:dvrv-us-1:devo/XXXXXX:tag/45",
-                "id_v1": "don:DEV-XXXXXX:tag:45",
-                "name": "src_id",
-                "style": "{\"color\":{\"code\":\"#991199\",\"name\":\"CustomPurple\"}}",
-                "style_new": {
-                  "color": "#991199"
-                }
-              },
-              "tag": {
-                "display_id": "TAG-45",
-                "id": "don:core:dvrv-us-1:devo/XXXXXX:tag/45",
-                "id_v1": "don:DEV-XXXXXX:tag:45",
-                "name": "src_id",
-                "style": "{\"color\":{\"code\":\"#991199\",\"name\":\"CustomPurple\"}}",
-                "style_new": {
-                  "color": "#991199"
-                }
-              },
-              "value": "980305"
-            },
-            {
-              "id": {
-                "display_id": "TAG-22",
-                "id": "don:core:dvrv-us-1:devo/XXXXXX:tag/22",
-                "id_v1": "don:DEV-XXXXXX:tag:22",
-                "name": "Jira import",
-                "style": "{\"color\":{\"code\":\"#AAF0BD\",\"name\":\"Mint\"}}",
-                "style_new": {
-                  "color": "#AAF0BD"
-                }
-              },
-              "tag": {
-                "display_id": "TAG-22",
-                "id": "don:core:dvrv-us-1:devo/XXXXXX:tag/22",
-                "id_v1": "don:DEV-XXXXXX:tag:22",
-                "name": "Jira import",
-                "style": "{\"color\":{\"code\":\"#AAF0BD\",\"name\":\"Mint\"}}",
-                "style_new": {
-                  "color": "#AAF0BD"
-                }
-              },
-              "value": "c6e7ee09-c708-4b42-bfc1-a1d054a66c9e"
-            }
-          ],
-          "title": "Internal Associates Showing up as External Customers"
+          "stock_schema_fragment": "don:core:dvrv-in-1:stock_sf/52503",
+          "title": "testing",
+          "type": "issue"
         }
       }
     },
     "context": {
-      "dev_oid": "don:identity:dvrv-us-1:devo/XXXXXX",
-      "automation_id": "don:integration:dvrv-us-1:devo/XXXXXX:automation/d6776732-c90e-4dd0-aa21-3f7115dc965f",
-      "source_id": "don:integration:dvrv-us-1:devo/XXXXXX:automation/d6776732-c90e-4dd0-aa21-3f7115dc965f",
-      "snap_in_id": "don:integration:dvrv-us-1:devo/XXXXXX:snap_in/6525667a-7e10-4c13-bb21-a69f779fabcd",
-      "snap_in_version_id": "don:integration:dvrv-us-1:devo/XXXXXX:snap_in_package/401582f8-c516-4b74-9783-da592989e220:snap_in_version/20b7f15b-3f58-4806-b124-b86953b90bb1",
-      "service_account_id": "don:identity:dvrv-us-1:devo/XXXXXX:svcacc/10",
       "secrets": {
-        "service_account_token": "XXXXXXXXXX"
-      }
+        "service_account_token": "<REDACTED:JWT>"
+      },
+      "service_account_id": "don:identity:dvrv-in-1:devo/21Di74pCRE:svcacc/41",
+      "dev_oid": "don:identity:dvrv-in-1:devo/21Di74pCRE",
+      "source_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:automation/d8915683-7e8a-455c-a658-b73a41f24bac",
+      "snap_in_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:snap_in/7d36b716-03b7-4b33-a826-8422350fe3dd",
+      "snap_in_version_id": "don:integration:dvrv-in-1:devo/21Di74pCRE:snap_in_package/d8ee1fd7-fe22-428c-b59d-7f2abe741ce1:snap_in_version/df5df846-3ead-4f73-be7f-4c090719c809",
+      "user_id": "don:identity:dvrv-in-1:devo/21Di74pCRE:svcacc/41",
+      "attempt_number": 1
     },
     "execution_metadata": {
-      "request_id": "",
-      "function_name": "function_1",
       "event_type": "work_created",
+      "function_name": "function_1",
+      "request_id": "",
       "devrev_endpoint": "https://api.devrev.ai"
     },
     "input_data": {
-      "global_values": {},
+      "global_values": {
+        "webhook_url": "<REDACTED:SLACK-WEBHOOK-URL>nn"
+      },
       "event_sources": {
-        "devrev-webhook": "don:integration:dvrv-us-1:devo/XXXXXX:event_source/62d7cea0-7529-42a2-949d-550e0c93ac6a"
+        "devrev-webhook": "don:integration:dvrv-in-1:devo/21Di74pCRE:event_source/f6abb4ec-5e71-4150-94de-8f15e71eb0bc",
+        "scheduled-events": "don:integration:dvrv-in-1:devo/21Di74pCRE:event_source/04f0b349-eba3-4f63-8f32-a99de84cb0a7"
       },
       "keyrings": null,
-      "resources": { "keyrings": {}, "tags": {} }
+      "resources": {
+        "keyrings": {},
+        "tags": {}
+      }
     }
-  }]
+  }
+]
