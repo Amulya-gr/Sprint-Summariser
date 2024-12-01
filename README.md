@@ -1,4 +1,4 @@
-## For documentation page click here : https://amulya-gr.github.io/Documentation-Sprint-Summariser/index.html
+# For the main documentation page click here : https://amulya-gr.github.io/Documentation-Sprint-Summariser/index.html
 
 
 
