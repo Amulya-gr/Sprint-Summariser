@@ -94,13 +94,18 @@ To streamline the retrospective process for development teams by providing autom
 ### Conclusion
 The current approach is temporary and will transition to a database for better scalability and persistence.
 
-## Slack Messages Screenshots
+## Slack Message Screenshots
 
 ### Mid Sprint Alert
 
 ![WhatsApp Image 2024-12-01 at 21 06 47](https://github.com/user-attachments/assets/57dc3bbd-c0fe-4718-9c85-4935f999d794)
 
 ### Sprint End Summary
+
+![WhatsApp Image 2024-12-01 at 21 32 28](https://github.com/user-attachments/assets/aa33d3db-8f0e-4f40-95bd-6887b7394a75)
+![WhatsApp Image 2024-12-01 at 21 32 27 (1)](https://github.com/user-attachments/assets/b0d2f632-7c57-4455-a87c-f13878aa09e9)
+![WhatsApp Image 2024-12-01 at 21 32 27](https://github.com/user-attachments/assets/78ff2721-8551-4907-99dd-6d987c1bc9b6)
+![WhatsApp Image 2024-12-01 at 21 32 26](https://github.com/user-attachments/assets/68375614-eeed-4818-a83f-9f165b363aa8)
 
 
 
