@@ -102,10 +102,11 @@ The current approach is temporary and will transition to a database for better s
 
 ### Sprint End Summary
 
-![WhatsApp Image 2024-12-01 at 21 32 28](https://github.com/user-attachments/assets/aa33d3db-8f0e-4f40-95bd-6887b7394a75)
-![WhatsApp Image 2024-12-01 at 21 32 27 (1)](https://github.com/user-attachments/assets/b0d2f632-7c57-4455-a87c-f13878aa09e9)
-![WhatsApp Image 2024-12-01 at 21 32 27](https://github.com/user-attachments/assets/78ff2721-8551-4907-99dd-6d987c1bc9b6)
-![WhatsApp Image 2024-12-01 at 21 32 26](https://github.com/user-attachments/assets/68375614-eeed-4818-a83f-9f165b363aa8)
+![WhatsApp Image 2024-12-01 at 21 32 26](https://github.com/user-attachments/assets/febab20c-9fe2-4f06-9e9e-d501152fd826)
+![WhatsApp Image 2024-12-01 at 21 32 27](https://github.com/user-attachments/assets/b8eb42b7-e60e-4357-93f8-7c142d36f15c)
+![WhatsApp Image 2024-12-01 at 21 32 27 (1)](https://github.com/user-attachments/assets/98d294a5-0291-41a9-92e8-a6937a8c7579)
+![WhatsApp Image 2024-12-01 at 21 32 28](https://github.com/user-attachments/assets/8b4cd974-84df-4de1-bacb-dfab71b74bbf)
+
 
 
 
