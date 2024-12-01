@@ -77,12 +77,10 @@ function saveSprintSummary(sprintId: string, summary: SprintData): void {
     console.info(`Saved summary for sprint: ${sprintId}`);
 }
 
-// Retrieve all stored sprint summaries (max 3)
 function getLastThreeSprintSummaries(): SprintData[] {
     return Object.values(sprintSummaries);
 }
 
-// Helper function to format issues
 const formatIssues = (issues: any[]) => {
   return issues.map((issue: any) => {
     // Determine if the issue is blocked by checking tags
@@ -107,7 +105,6 @@ const formatIssues = (issues: any[]) => {
   });
 };
 
-// Helper function to construct OpenAI prompt
 const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity: number, sprintGrade: string, previousSprints: SprintData[]) => {
   // Extract relevant data for the last three sprints
   const previousSprintsData = previousSprints.map((sprint) => ({
@@ -197,7 +194,6 @@ const constructPrompt = (issues: any[], sprintVelocity: number, plannedVelocity:
   `;
 };
 
-// Function to make OpenAI API call to generate sprint overview
 const generateSprintOverview = async (data: any, currentSprintId: string): Promise<SprintData | null> => {
   const issues = formatIssues(data);
   const { actualVelocity, plannedVelocity } = calculateSprintVelocity(issues);
@@ -300,7 +296,6 @@ async function fetchSprintIssues(event: any): Promise<any[]> {
   }
 }
 
-// Function to handle the sprint end event and post the summary
 async function handleSprintEndEvent(event: any): Promise<void> {
   try {
     const sprintIssues = await fetchSprintIssues(event);
@@ -310,7 +305,7 @@ async function handleSprintEndEvent(event: any): Promise<void> {
     if (sprintSummary) {
       console.info("Posting sprint summary to Slack...");
       const webhookUrl = event.input_data.global_values["webhook_url"];
-      await postSprintSummaryToSlack(webhookUrl, sprintSummary); // Post summary to Slack
+      await postSprintSummaryToSlack(webhookUrl, sprintSummary);
     } else {
       console.error("Failed to generate sprint summary");
     }
@@ -324,7 +319,7 @@ function calculateSprintVelocity(issues: any[]): { actualVelocity: number, plann
   let plannedVelocity = 0;
 
   issues.forEach((issue) => {
-    const effort = priorityToEffort[issue.priority] || 0; // Default to 0 if priority is not mapped
+    const effort = priorityToEffort[issue.priority] || 0;
     plannedVelocity += effort; // Add all issues to planned velocity
 
     // Add effort of completed issues to actual velocity
@@ -337,7 +332,6 @@ function calculateSprintVelocity(issues: any[]): { actualVelocity: number, plann
   return { actualVelocity, plannedVelocity };
 }
 
-// Main entry point
 export const run = async (events: any[]): Promise<void> => {
   console.info("Processing events:", JSON.stringify(events));
 
