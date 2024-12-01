@@ -1,7 +1,7 @@
 ## For documentation page click here : https://amulya-gr.github.io/Documentation-Sprint-Summariser/index.html
 
 
-# Sprint Summarizer Snap-in Documentation
+
 
 ## Overview
 The Sprint Summarizer automates the generation of detailed sprint summaries at the conclusion of each sprint. These summaries capture the highlights of the sprint, focusing on successes, challenges encountered, and actionable insights, and automatically deliver this information to a pre-configured Slack channel.
