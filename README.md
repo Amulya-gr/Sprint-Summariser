@@ -53,6 +53,8 @@ To streamline the retrospective process for development teams by providing autom
 4. Deploy the snap-in. Please refer to [DevRev Docs](https://developer.devrev.ai/public/snapin-development/concepts#function).
 
 ## Workflow
+![arc-with-bg(1)](https://github.com/user-attachments/assets/2b9c966c-fd17-4d89-bb44-08cd78875e44)
+
 1. **User Action in DevRev System:** A user creates or updates an issue in an active sprint, triggering a `work_created` or `work_updated` event via the DevRev-webhook event source.
 2. **Event Sent to Snap-in:** The triggered event is sent to the Snap-in for processing.
 3. **Snap-in Event Handling:**
