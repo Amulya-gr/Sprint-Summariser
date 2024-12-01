@@ -94,6 +94,13 @@ To streamline the retrospective process for development teams by providing autom
 ### Conclusion
 The current approach is temporary and will transition to a database for better scalability and persistence.
 
+## Snap-In Demo Video
+For a comprehensive demonstration of the Sprint Summarizer Snap-In in action, including its setup, configuration, functionality, and working please watch the following video:
+
+[Sprint Summarizer Snap-In Demo](https://youtu.be/uNc25YdwNLI)
+
+This video provides an in-depth look at how the Snap-In automates the generation of sprint summaries, integrates with Slack, and enhances the sprint retrospective process for development teams.
+
 ## Slack Message Screenshots
 
 ### Mid Sprint Alert
